@@ -61,6 +61,7 @@ public class ModUtils {
             return userInput;
         }
 
+
         // if starts with id:, parse ourselves
         if (userInput.startsWith("id:")) {
             return userInput.substring(3);

@@ -1,10 +1,10 @@
 name: SimpleVoiceChatMusic
-version: '1.0.0'
+version: '2.0.0'
 main: dev.klash.simpleVoiceChatMusic.SimpleVoiceChatMusic
 api-version: '1.21'
-authors: [ GavinGoGaming ]
+authors: [ GavinGoGaming, MrTron ]
 depend: [ voicechat ]
-description: A port of the SimpleVoiceChatMusic fabric mod for PaperMC.
+description: A port of the SimpleVoiceChatMusic fabric mod by ItzDerock to PaperMC. Which has now been forked from GavinGoGaming to up-to-date standards and adds spotify search!
 commands:
   music:
     description: Play music in voice chat.
