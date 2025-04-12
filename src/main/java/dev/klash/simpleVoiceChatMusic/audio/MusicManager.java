@@ -24,9 +24,9 @@ public class MusicManager {
         this.playerManager.getConfiguration().setFilterHotSwapEnabled(true);
 
         AudioSourceManagers.registerRemoteSources(
-            this.playerManager,
-            // we will load v2 of yt music player
-            com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.class
+                this.playerManager,
+                // we will load v2 of yt music player
+                com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager.class
         );
 
         YoutubeAudioSourceManager ytSourceManager = new YoutubeAudioSourceManager();
