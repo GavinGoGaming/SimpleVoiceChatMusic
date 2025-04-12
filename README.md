@@ -1,4 +1,4 @@
-# Simple Voice Chat Music Player for Paper
+# Simple Voice Chat Music Player for Paper/Purpur
 
 _This mod is a **port** of the [Simple Voice Chat Music](https://modrinth.com/mod/simple-voice-chat-music) fabric mod!_
 
@@ -28,8 +28,8 @@ Song can be a Spotify URL, soundcloud URL, Youtube URL, bandcamp URL, etc or it 
 ### Spotify
 Spotify "Integration" does work with this, it uses the Spotify API to get the title and artist and searches it on YouTube. You can paste only spotify URLs that look like `"https://open.spotify.com/track/..."` It does not need a "forced search". It can be pasted in normally like: `/music play https://open.spotify.com/track/19fKJrO9XdOf6Xla2QHecO?si=1f494f7a8d664d62`
 ## Support
-I remade this and added spotify for personal use, so if there are any bugs with it I may or may not be able to assist as more than 90% of this project is NOT my code.
-If it has something to do with Spotify you can open an issue otherwise. **I will not force direct you** to him but you may contact @gavingogaming on discord for support with this Paper version - there are bugs in this version nonexistant in the fabric mod.
+I (MrTron) added spotify for personal use, so if there are any bugs with it, please open an issue!
+You may open an issue or contact @gavingogaming on discord for support with this Paper version - there are bugs in this version nonexistant in the fabric mod.
 
 ## Customization
 

@@ -18,8 +18,8 @@ public class SpotifyHandler {
 
     // Load environment variables with dotenv.
     //private static final Dotenv dotenv = Dotenv.load();
-    private static final String CLIENT_ID = "b1fa641f52254fd3a5e0224749e33bad";
-    private static final String CLIENT_SECRET = "51a5a7bc3483450dbc0c4f81516f5a94";
+    private static final String CLIENT_ID = "YOUR CLIENT ID";
+    private static final String CLIENT_SECRET = "YOUR SECRET";
 
     private static final String AUTH_URL = "https://accounts.spotify.com/api/token";
     private static final String TRACK_ENDPOINT = "https://api.spotify.com/v1/tracks/";

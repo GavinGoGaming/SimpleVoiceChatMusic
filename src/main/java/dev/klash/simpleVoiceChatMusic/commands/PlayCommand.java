@@ -6,7 +6,7 @@ import dev.klash.simpleVoiceChatMusic.SimpleVoiceChatMusic;
 import dev.klash.simpleVoiceChatMusic.audio.PlayLoadHandler;
 import dev.klash.simpleVoiceChatMusic.util.ModUtils;
 import dev.klash.simpleVoiceChatMusic.util.Text;
-import dev.klash.simpleVoiceChatMusic.audio.SpotifyHandler;  // Make sure this import matches your package
+import dev.klash.simpleVoiceChatMusic.audio.SpotifyHandler;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -25,14 +25,13 @@ public class PlayCommand implements Command {
                 try {
                     String trackId = SpotifyHandler.extractTrackId(input);
                     if (trackId == null) {
-                        // Fallback: use the raw input if extraction fails.
+                        // fallback: use the raw input if extraction fails.
                         runPlayTask(context, input);
                         return;
                     }
-                    // Fetch track info from Spotify
+                    // fetches track info from Spotify
                     SpotifyHandler.TrackInfo trackInfo = SpotifyHandler.fetchTrackInfo(trackId);
                     String searchQuery = "ytsearch:" + trackInfo.getCombinedQuery();
-                    // Now run the YouTube search on the main thread
                     runPlayTask(context, searchQuery);
                 } catch (Exception e) {
                     // If there was an error with Spotify integration, inform the user and fallback.
@@ -48,9 +47,7 @@ public class PlayCommand implements Command {
         return 0;
     }
 
-    /**
-     * Schedules a task on the main thread to load the track using the provided query.
-     */
+     //Schedules a task on the main thread to load the track using the provided query.
     private void runPlayTask(Player context, String query) {
         Bukkit.getScheduler().runTask(SimpleVoiceChatMusic.get(), () -> {
             ModUtils.CheckPlayerGroup result = checkPlayerGroup(context);
