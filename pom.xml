@@ -6,7 +6,7 @@
 
     <groupId>dev.klash</groupId>
     <artifactId>SimpleVoiceChatMusic</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.1</version>
     <packaging>jar</packaging>
 
     <name>SimpleVoiceChatMusic</name>
@@ -94,7 +94,7 @@
         <dependency>
             <groupId>dev.lavalink.youtube</groupId>
             <artifactId>v2</artifactId>
-            <version>1.13.0</version>
+            <version>1.13.2</version>
         </dependency>
         <dependency>
             <groupId>org.jsoup</groupId>
