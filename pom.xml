@@ -6,14 +6,30 @@
 
     <groupId>dev.klash</groupId>
     <artifactId>SimpleVoiceChatMusic</artifactId>
-    <version>3.1.1</version>
+    <version>3.2.0</version>
     <packaging>jar</packaging>
 
     <name>SimpleVoiceChatMusic</name>
+    <description>A port of the SimpleVoiceChatMusic fabric mod to PaperMC.</description>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+        </license>
+    </licenses>
 
     <properties>
         <java.version>25</java.version>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!--
+          鍥哄畾鐗堟湰锛屼笉瑕佺敤 [26.1.2.build,) 杩欐牱鐨勫紑鍖洪棿锛?          Maven 浼氬彇"婊¤冻鏉′欢鐨勬渶楂樼増鏈?锛岄殢鐫€ Paper 鍙戝竷鏂扮増鏈紝
+          鏋勫缓缁撴灉浼氭紓绉伙紙鐢氳嚦浼氱紪璇戝埌 26.3 鐨?alpha 鐗?API 涓婏級銆?        -->
+        <paper.version>26.1.2.build.74-stable</paper.version>
+        <lavaplayer.version>2.2.6</lavaplayer.version>
+        <youtube-source.version>1.18.1</youtube-source.version>
     </properties>
 
     <build>
@@ -24,9 +40,13 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <release>${java.version}</release>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.1</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -38,6 +58,24 @@
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>module-info.class</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <!-- 鍚堝苟渚濊禆閲屽彲鑳藉瓨鍦ㄧ殑 META-INF/services 澹版槑 -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -77,7 +115,7 @@
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>[26.1.2.build,)</version>
+            <version>${paper.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -89,37 +127,29 @@
         <dependency>
             <groupId>dev.arbjerg</groupId>
             <artifactId>lavaplayer</artifactId>
-            <version>2.2.6</version>
+            <version>${lavaplayer.version}</version>
         </dependency>
         <dependency>
             <groupId>dev.lavalink.youtube</groupId>
             <artifactId>v2</artifactId>
-            <version>1.18.1</version>
+            <version>${youtube-source.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>1.16.1</version>
-        </dependency>
-        <dependency>
-            <groupId>net.iharder</groupId>
-            <artifactId>base64</artifactId>
-            <version>2.3.9</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.cdimascio</groupId>
-            <artifactId>dotenv-java</artifactId>
-            <version>3.0.0</version>
-        </dependency>
+        <!-- SpotifyHandler 浣跨敤锛欻TTP 瀹㈡埛绔?+ JSON 瑙ｆ瀽 -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>4.5.0</version>
+            <version>4.12.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.8.9</version>
+            <version>2.11.0</version>
+        </dependency>
+        <!-- 网易云扫码登录：把二维码画到地图上 -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
         </dependency>
     </dependencies>
 </project>

@@ -1,0 +1,215 @@
+# =====================================================================================
+#  SimpleVoiceChatMusic 配置文件  ·  config-version: 1（插件 1.0.0）
+# =====================================================================================
+#  · 改完需要重启服务器（本插件不支持 /reload）
+#  · 所有玩家可见的文字都在 lang/<语言>.yml，不在这里
+#  · [..] 表示可选值；留空 "" 表示使用插件默认行为
+#
+#  目录
+#    1. 语言与提示        language / messages
+#    2. 播放与队列        music
+#    3. 网络与直链        music.http
+#    4. B 站              bilibili
+#    5. Boss 栏           bossbar
+#    6. 图形菜单          menu
+#    7. Spotify（可选）   spotify
+# =====================================================================================
+config-version: 1
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  1. 语言与提示
+# ─────────────────────────────────────────────────────────────────────────────
+language:
+  # 默认语言，对应 jar 内 lang/<代码>.yml（如 en_us、zh_cn），找不到时退回 en_us。
+  default: en_us
+
+  # true  = 按玩家客户端语言自动选择（中文客户端用 zh_cn），没有对应语言再用默认
+  # false = 所有玩家都用上面的默认语言
+  use-client-locale: true
+
+messages:
+  # 是否给聊天消息加上语言文件 general.prefix 里的前缀。
+  use-prefix: true
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  2. 播放与队列
+# ─────────────────────────────────────────────────────────────────────────────
+music:
+  # 每个语音组最多排队多少首歌；队列满后 /music play 会被拒绝，避免被刷爆内存。
+  max-queue-size: 100
+
+  # 所有音源（B 站 / 网易云 / YouTube / SoundCloud）一次搜索展示多少条结果
+  # 聊天栏和游戏内菜单共用这个值（1-50）。
+  max-search-results: 5
+
+  # 聊天里歌名 / 歌手名的最大长度（超出截断加省略号）。
+  max-title-length: 120
+  max-author-length: 60
+
+  # 新语音组的初始音量（0-100）与低音增强（0-200）。
+  # 只影响"从未调整过"的组；玩家用 /music volume、/music bassboost 调过后会记住。
+  default-volume: 100
+  default-bassboost: 0
+
+  # 玩家没有设置过 "默认音源" 时用哪个搜索源 [bilibili / netease / youtube / soundcloud / all]
+  # 「全部音源」模式里额外参与搜索的源（B 站 / 网易云由 bilibili.enabled、netease.enabled 控制）。
+  # 国内网络连不上 YouTube / SoundCloud 时把它们设为 false，避免每次搜索都超时。
+  all-sources:
+    youtube: true
+    soundcloud: true
+  # all = 一次并发搜索所有音源（BV 号 / 链接仍然直接播放，不会被搜索）
+  # 玩家可以用 /music source <id> 或游戏内菜单单独修改自己的默认音源。
+  default-source: "bilibili"
+
+  # 同一个人连续执行 /music play、/music search 的冷却（毫秒），0 = 关闭。
+  command-cooldown-ms: 1000
+
+  # 搜索结果里「[点击加入队列]」按钮的样式。
+  search:
+    # 颜色：色名（green / gold / aqua / red ...）或十六进制（#22c55e）；留空 = 用语言文件里的样式
+    click-color: "green"
+    # 是否加粗
+    click-bold: true
+
+  # 服务器启动完成后自动创建一个 Simple Voice Chat 音乐群组。
+  auto-group:
+    enabled: true
+    # 群组名；改名字后旧名字的组需要自己删
+    name: "音乐"
+    # 留空 = 无密码
+    password: ""
+    # true = SVC 会保存，重启后仍然存在；插件检测到同名群组时不会重复创建
+    persistent: true
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  3. 网络与直链（http/https 音源）—— 仍然是 music.http 下的配置
+# ─────────────────────────────────────────────────────────────────────────────
+  http:
+    # 有些 CDN 做了防盗链，不带浏览器 UA 会直接返回 0 字节；留空则不覆盖 lavaplayer 默认 UA。
+    user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36"
+
+    # 全局 Referer，留空即可；B 站音频 CDN 由插件按域名自动补 Referer。
+    referer: ""
+
+    # 连接 / 读取超时（毫秒）
+    connect-timeout-ms: 5000
+    read-timeout-ms: 15000
+
+    # 播放直链前先"体检"：只读 1 个字节，不下载、不占磁盘。
+    # 能提前识别"链接其实是网页 / 404 / 403 防盗链 / 声明大小却返回空数据"，
+    # 把原因直接告诉玩家，而不是让 lavaplayer 抛一堆堆栈。
+    preflight: true
+    preflight-timeout-ms: 4000
+
+    # 失败缓存（秒）：同一链接刚失败过，这段时间内再点直接返回同样提示，不再发请求、不再刷日志。0 = 关闭。
+    failure-cache-seconds: 30
+
+    # 网络类失败（超时 / 连接被断开）自动重试次数与间隔。
+    # 很多 CDN 第一次返回 0 字节、第二次就有数据，重试能明显提高成功率。
+    retry-count: 2
+    retry-delay-ms: 1500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  4. B 站
+# ─────────────────────────────────────────────────────────────────────────────
+bilibili:
+  # 关闭后：搜索/关键词播放回退到 YouTube，B 站链接仍然可以播放。
+  enabled: true
+
+  # 登录方式与网易云一致：/music login bilibili 扫码（凭证保存在 bilibililogin.json）。
+  # 未登录时会自动取 buvid3，足够搜索和普通音质播放。
+
+  # B 站搜不到时是否回退到 YouTube 搜索。
+  fallback-to-youtube: true
+
+  # ── 接口地址（B 站改版时可自行替换；{query} {limit} {bvid} {aid} {cid} {epId} {seasonId} 会被替换）──
+  search-url: "https://api.bilibili.com/x/web-interface/search/type?search_type=video&keyword={query}&page=1&page_size={limit}"
+  view-url: "https://api.bilibili.com/x/web-interface/view?bvid={bvid}"
+  view-url-aid: "https://api.bilibili.com/x/web-interface/view?aid={aid}"
+  play-url: "https://api.bilibili.com/x/player/playurl?bvid={bvid}&cid={cid}&fnval=16&fnver=0&fourk=1"
+  pgc-season-url: "https://api.bilibili.com/pgc/view/web/season?ep_id={epId}&season_id={seasonId}"
+  pgc-play-url: "https://api.bilibili.com/pgc/player/web/playurl?ep_id={epId}&cid={cid}&fnval=16&fnver=0&fourk=1"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  5. Boss 栏
+# ─────────────────────────────────────────────────────────────────────────────
+bossbar:
+  # 是否在屏幕顶部显示进度栏（歌名 + [当前时间/总时长] + 原生进度条）。
+  enabled: true
+
+  # 刷新间隔（tick）。20 = 每秒一次；调小更顺滑，但发包更频繁。
+  update-interval-ticks: 20
+
+  # 颜色 [PINK / BLUE / RED / GREEN / YELLOW / PURPLE / WHITE]
+  color: BLUE
+
+  # 样式 [PROGRESS / NOTCHED_10 / NOTCHED_12 / NOTCHED_20]
+  overlay: PROGRESS
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  6. 图形菜单（Paper 1.21.7+ 的 Dialog）
+# ─────────────────────────────────────────────────────────────────────────────
+menu:
+  # 是否允许 /music menu（低版本服务器/客户端会自动提示不支持）
+  enabled: true
+
+  # 「完整队列」页面最多显示多少首（5-50）
+  queue-page-size: 20
+
+  # 主菜单里预览"接下来"几首（1-10）
+  preview-count: 3
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  7. 网易云音乐
+# ─────────────────────────────────────────────────────────────────────────────
+# 登录：管理员在游戏里执行 /music login 网易云，拿到一张印着二维码的地图，
+# 用网易云音乐 App 扫码并在手机上确认即可。凭证保存在插件目录的
+# neteaselogin.json（等同于账号凭据，不要外传），所有玩家共用这个账号播放。
+netease:
+  # 是否启用网易云音源（关闭后 netease: 前缀与 163 链接都不可用）
+  enabled: true
+
+  # 音质档位 [standard / higher / exhigh / lossless / hires]
+  # 需要会员的档位只有在登录了会员账号时才拿得到，拿不到会自动退回 standard
+  quality: "exhigh"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  8. 歌词（ActionBar）
+# ─────────────────────────────────────────────────────────────────────────────
+# 网易云歌曲会尝试获取歌词，按播放进度显示在 ActionBar；没有歌词的歌曲不显示。
+lyrics:
+  enabled: true
+
+  # 刷新间隔（tick）。20 = 每秒；调小更跟手，但发包更频繁
+  update-interval-ticks: 10
+
+  # 整体偏移（毫秒）。歌词比人声早显示就填负数，晚显示填正数
+  offset-ms: 0
+
+  # 歌词颜色：色名（blue / green / aqua ...）或十六进制（#22c55e）
+  color: "blue"
+
+  # 是否加粗
+  bold: true
+
+  # 字体：留空 = 默认字体；也可以填 minecraft:default 或资源包里的自定义字体 ID
+  font: ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  9. Spotify（可选）
+# ─────────────────────────────────────────────────────────────────────────────
+# 只有想在 /music play 里直接粘贴 Spotify 单曲链接时才需要填。
+# 申请：https://developer.spotify.com/dashboard 创建 App → 复制 Client ID / Secret。
+# 不要把这两个值提交到公开仓库。
+spotify:
+  client-id: ""
+  client-secret: ""

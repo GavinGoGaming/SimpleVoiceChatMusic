@@ -1,19 +1,26 @@
 name: SimpleVoiceChatMusic
-version: '3.1.0'
+version: '${project.version}'
 main: dev.klash.simpleVoiceChatMusic.SimpleVoiceChatMusic
 api-version: '1.21'
 authors: [ GavinGoGaming, MrTron ]
 depend: [ voicechat ]
-description: A port of the SimpleVoiceChatMusic fabric mod by ItzDerock to PaperMC. Which has now been forked from GavinGoGaming to up-to-date standards and adds spotify search!
+description: >-
+  Simple Voice Chat Music 的 Paper 移植版：在语音聊天组里一起听歌，
+  支持 B 站 / 网易云 / YouTube / SoundCloud / 直链、图形菜单、滚动歌词与循环播放。
 commands:
   music:
     description: Play music in voice chat.
-    usage: /music <...>
+    usage: /music <play|search|now-playing|queue|skip|pause|resume|stop|volume|bassboost|loop|source|menu|login|lang|kill> [args]
     permission: simplevoicechatmusic.music
     aliases: [ svcmusic ]
   music_register_service:
-    description: Register SVCM plugin service.
+    description: Manually register the Simple Voice Chat plugin service.
+    usage: /music_register_service
+    permission: simplevoicechatmusic.admin
 permissions:
   simplevoicechatmusic.music:
-    description: Allows the player to play music in voice chat.
+    description: Allows the player to play music in their voice chat group.
     default: true
+  simplevoicechatmusic.admin:
+    description: Allows registering the Simple Voice Chat service and other admin actions.
+    default: op

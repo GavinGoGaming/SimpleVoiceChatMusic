@@ -1,12 +1,7 @@
 package dev.klash.simpleVoiceChatMusic.audio;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import io.github.cdimascio.dotenv.Dotenv;
+import com.google.gson.JsonParser;
 import okhttp3.Credentials;
 import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
@@ -14,36 +9,104 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class SpotifyHandler {
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-    // Load environment variables with dotenv.
-    //private static final Dotenv dotenv = Dotenv.load();
-    private static final String CLIENT_ID = "YOUR CLIENT ID";
-    private static final String CLIENT_SECRET = "YOUR SECRET";
+/**
+ * 极简的 Spotify Web API 客户端。
+ *
+ * <p>它<b>不</b>播放 Spotify 音频，而是用 Spotify 的元数据（歌名 + 歌手）去 YouTube 搜索同名歌曲。</p>
+ *
+ * <p>凭据来自 {@code config.yml}（{@code spotify.client-id} / {@code spotify.client-secret}），
+ * 不再硬编码在源码里。未配置时 {@link #isConfigured()} 返回 false，调用方应给出明确提示。</p>
+ */
+public final class SpotifyHandler {
 
     private static final String AUTH_URL = "https://accounts.spotify.com/api/token";
     private static final String TRACK_ENDPOINT = "https://api.spotify.com/v1/tracks/";
-    private static final OkHttpClient httpClient = new OkHttpClient();
 
+    private static final OkHttpClient HTTP_CLIENT = new OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .callTimeout(20, TimeUnit.SECONDS)
+            .build();
 
-     //Extracts the Spotify track ID from a given Spotify URL.
+    private static String clientId = "";
+    private static String clientSecret = "";
 
-    public static String extractTrackId(String spotifyUrl) {
-        if (spotifyUrl != null && spotifyUrl.contains("open.spotify.com/track/")) {
-            String[] parts = spotifyUrl.split("open.spotify.com/track/");
-            if (parts.length > 1) {
-                String idAndMore = parts[1];
-                // Remove any parameters after '?'
-                return idAndMore.split("\\?")[0];
-            }
-        }
-        return null;
+    /** 缓存的 access token 及其过期时间（Spotify 默认 1 小时） */
+    private static String accessToken;
+    private static long accessTokenExpiresAt;
+
+    private SpotifyHandler() {
     }
 
+    /**
+     * 由插件在 onEnable 时调用，注入 config.yml 里的凭据。
+     */
+    public static void configure(String id, String secret) {
+        clientId = id == null ? "" : id.trim();
+        clientSecret = secret == null ? "" : secret.trim();
 
-     //Obtains an access token using the Spotify Client Credentials flow.
-    public static String getAccessToken() throws IOException {
-        String credentials = Credentials.basic(CLIENT_ID, CLIENT_SECRET);
+        synchronized (SpotifyHandler.class) {
+            accessToken = null;
+            accessTokenExpiresAt = 0L;
+        }
+    }
+
+    public static boolean isConfigured() {
+        return !clientId.isEmpty() && !clientSecret.isEmpty();
+    }
+
+    /**
+     * 从 Spotify 链接/URI 中提取 track id。
+     *
+     * @return track id，无法识别时返回 null
+     */
+    public static String extractTrackId(String spotifyUrl) {
+        if (spotifyUrl == null) {
+            return null;
+        }
+
+        String value = spotifyUrl.trim();
+        String marker = "spotify.com/track/";
+        int markerIndex = value.indexOf(marker);
+
+        String id;
+        if (markerIndex >= 0) {
+            id = value.substring(markerIndex + marker.length());
+        } else if (value.startsWith("spotify:track:")) {
+            id = value.substring("spotify:track:".length());
+        } else {
+            return null;
+        }
+
+        int cut = -1;
+        for (char c : new char[]{'?', '#', '/'}) {
+            int index = id.indexOf(c);
+            if (index >= 0 && (cut < 0 || index < cut)) {
+                cut = index;
+            }
+        }
+        if (cut >= 0) {
+            id = id.substring(0, cut);
+        }
+
+        return id.isEmpty() ? null : id;
+    }
+
+    /**
+     * 获取 access token，带缓存。
+     */
+    private static synchronized String getAccessToken() throws IOException {
+        long now = System.currentTimeMillis();
+        if (accessToken != null && now < accessTokenExpiresAt - 30_000L) {
+            return accessToken;
+        }
+
+        String credentials = Credentials.basic(clientId, clientSecret);
         RequestBody body = new FormBody.Builder()
                 .add("grant_type", "client_credentials")
                 .build();
@@ -54,73 +117,103 @@ public class SpotifyHandler {
                 .header("Authorization", credentials)
                 .build();
 
-        try (Response response = httpClient.newCall(request).execute()) {
+        try (Response response = HTTP_CLIENT.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("Unexpected code " + response);
+                throw new IOException("Spotify token request failed (HTTP " + response.code()
+                        + "). Please check spotify.client-id / spotify.client-secret in config.yml.");
             }
-            String responseBody = response.body().string();
-            return extractToken(responseBody);
+
+            JsonObject json = JsonParser.parseString(readBody(response)).getAsJsonObject();
+            if (!json.has("access_token")) {
+                throw new IOException("Spotify token response did not contain an access_token");
+            }
+
+            accessToken = json.get("access_token").getAsString();
+            long expiresIn = json.has("expires_in") ? json.get("expires_in").getAsLong() : 3600L;
+            accessTokenExpiresAt = System.currentTimeMillis() + expiresIn * 1000L;
+
+            return accessToken;
         }
     }
 
-    //Using gson to parse JSON cause screw natively doing it that sucks
-    private static String extractToken(String json) {
-        // Look for "access_token":"<token>"
-        int tokenIndex = json.indexOf("access_token");
-        if (tokenIndex == -1) return null;
-        int colonIndex = json.indexOf(":", tokenIndex) + 1;
-        int firstQuote = json.indexOf("\"", colonIndex);
-        int secondQuote = json.indexOf("\"", firstQuote + 1);
-        return json.substring(firstQuote + 1, secondQuote);
+    private static void invalidateToken() {
+        synchronized (SpotifyHandler.class) {
+            accessToken = null;
+            accessTokenExpiresAt = 0L;
+        }
     }
 
-
-    //gets the track information from webAPI
+    /**
+     * 查询单曲信息。
+     */
     public static TrackInfo fetchTrackInfo(String trackId) throws IOException {
-        String accessToken = getAccessToken();
+        if (!isConfigured()) {
+            throw new IOException("Spotify integration is not configured");
+        }
+
+        String json = requestTrack(trackId, getAccessToken());
+        if (json == null) {
+            // token 可能已失效，刷新后重试一次
+            invalidateToken();
+            json = requestTrack(trackId, getAccessToken());
+        }
+
+        if (json == null) {
+            throw new IOException("Spotify track lookup failed");
+        }
+
+        JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+        return new TrackInfo(parseTitle(root), parseArtists(root));
+    }
+
+    /**
+     * @return 响应体；401 时返回 null 以便调用方刷新 token 重试
+     */
+    private static String requestTrack(String trackId, String token) throws IOException {
         Request request = new Request.Builder()
                 .url(TRACK_ENDPOINT + trackId)
-                .header("Authorization", "Bearer " + accessToken)
+                .header("Authorization", "Bearer " + token)
                 .build();
 
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Unexpected code " + response);
+        try (Response response = HTTP_CLIENT.newCall(request).execute()) {
+            if (response.code() == 401) {
+                return null;
             }
-            String jsonResponse = response.body().string();
-            String title = parseTitle(jsonResponse);
-            String[] artists = parseArtists(jsonResponse);
-            return new TrackInfo(title, artists);
+            if (!response.isSuccessful()) {
+                throw new IOException("Spotify track lookup failed (HTTP " + response.code() + ")");
+            }
+            return readBody(response);
         }
     }
 
+    private static String readBody(Response response) throws IOException {
+        return response.body() == null ? "" : response.body().string();
+    }
 
-    private static String parseTitle(String json) {
-        Gson gson = new Gson();
-        JsonObject root = gson.fromJson(json, JsonObject.class);
-        // The track's name is at the root level.
-        if (root.has("name"))
+    private static String parseTitle(JsonObject root) {
+        if (root.has("name")) {
             return root.get("name").getAsString();
+        }
         return "Unknown Title";
     }
 
-    private static String[] parseArtists(String json) {
-        Gson gson = new Gson();
-        JsonObject root = gson.fromJson(json, JsonObject.class);
+    private static String[] parseArtists(JsonObject root) {
         if (root.has("artists")) {
             List<String> names = new ArrayList<>();
             for (var artistElement : root.getAsJsonArray("artists")) {
                 JsonObject artistObj = artistElement.getAsJsonObject();
-                if (artistObj.has("name"))
+                if (artistObj.has("name")) {
                     names.add(artistObj.get("name").getAsString());
+                }
             }
             return names.toArray(new String[0]);
         }
         return new String[]{"Unknown Artist"};
     }
 
-
-    //variables that hold track info to send it to youtube-source
+    /**
+     * Spotify 单曲信息，用于拼 YouTube 搜索词。
+     */
     public static class TrackInfo {
         private final String title;
         private final String[] artists;
@@ -130,15 +223,9 @@ public class SpotifyHandler {
             this.artists = artists;
         }
 
-        public String getTitle() {
-            return title;
-        }
-
-        public String[] getArtists() {
-            return artists;
-        }
-
-        //returns a combined search query (title and artist names) suitable for a youtube search.
+        /**
+         * @return 适合 YouTube 搜索的 "歌名 + 歌手" 查询串
+         */
         public String getCombinedQuery() {
             return title + " " + String.join(" ", artists);
         }
