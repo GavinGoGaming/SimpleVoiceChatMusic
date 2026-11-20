@@ -1,4 +1,4 @@
-# Simple Voice Chat Music —— Paper 语音聊天音乐插件 · 3.4.0
+# Simple Voice Chat Music —— Paper 语音聊天音乐插件 · 3.2.1
 
 > 本插件是 [Simple Voice Chat Music](https://modrinth.com/mod/simple-voice-chat-music)（ItzDerock 的 Fabric 模组）的 **Paper 移植版**。
 > 在语音聊天组里和好友一起听歌：B 站、网易云、YouTube、SoundCloud、直链音频都能点，支持图形菜单、滚动歌词和循环播放。
