@@ -10,6 +10,7 @@ import dev.klash.simpleVoiceChatMusic.audio.GroupManager;
 import dev.klash.simpleVoiceChatMusic.audio.GroupSettingsManager;
 import dev.klash.simpleVoiceChatMusic.audio.MusicManager;
 import dev.klash.simpleVoiceChatMusic.audio.NetEaseApi;
+import dev.klash.simpleVoiceChatMusic.audio.PlayerCatalogue;
 import dev.klash.simpleVoiceChatMusic.config.PlayerPreferences;
 import dev.klash.simpleVoiceChatMusic.config.PluginSettings;
 import dev.klash.simpleVoiceChatMusic.i18n.Messages;
@@ -34,6 +35,7 @@ import org.bukkit.entity.Player;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -97,6 +99,7 @@ public final class MusicDialogGui {
                         click(view -> runCommand(player, "music stop"))),
                 nav(player, "menu.button.queue", "menu.button.queue-tip", () -> buildQueue(player)),
                 nav(player, "menu.button.volume", "menu.button.volume-tip", () -> buildVolume(player)),
+                nav(player, "menu.button.library", "menu.button.library-tip", () -> buildLibrary(player)),
                 nav(player, "menu.button.settings", "menu.button.settings-tip", () -> buildSettings(player)),
                 nav(player, "menu.button.advanced", "menu.button.advanced-tip", () -> buildAdvanced(player))
         );
@@ -140,7 +143,7 @@ public final class MusicDialogGui {
                     for (NetEaseApi.Song song : NetEaseApi.search(query, limit)) {
                         entries.add(new ResultEntry(resultLabel(player, song.displayName(),
                                 song.durationMs(), song.vip()),
-                                "music play " + song.identifier()));
+                                "music play " + song.identifier(), song.identifier(), song.displayName()));
                     }
                 } else if (source == PlayerPreferences.Source.ALL) {
                     GroupManager group = resolveGroup(player);
@@ -153,13 +156,14 @@ public final class MusicDialogGui {
 
                         String tag = Messages.plain(player, hit.sourceLangKey());
                         entries.add(new ResultEntry(resultLabel(player, "[" + tag + "] " + hit.display(),
-                                hit.durationMs(), hit.vip()), hit.command()));
+                                hit.durationMs(), hit.vip()), hit.command(),
+                                identifierOf(hit.command()), hit.display()));
                     }
                 } else {
                     for (BilibiliApi.Video video : BilibiliApi.searchWithRetry(query, limit)) {
                         entries.add(new ResultEntry(resultLabel(player, video.displayName(),
                                 video.durationMs(), false),
-                                "music play " + video.identifier()));
+                                "music play " + video.identifier(), video.identifier(), video.displayName()));
                     }
                 }
             } catch (Exception e) {
@@ -198,7 +202,7 @@ public final class MusicDialogGui {
         });
     }
 
-    private record ResultEntry(Component label, String command) {
+    private record ResultEntry(Component label, String command, String identifier, String plainTitle) {
     }
 
     private static Dialog buildResults(Player player, PlayerPreferences.Source source, List<ResultEntry> entries) {
@@ -207,7 +211,7 @@ public final class MusicDialogGui {
         for (ResultEntry entry : entries) {
             actions.add(ActionButton.builder(entry.label())
                     .width(WIDE_BUTTON_WIDTH)
-                    .action(click(view -> runCommand(player, entry.command())))
+                    .action(click(view -> player.showDialog(buildResultActions(player, source, entry))))
                     .build());
         }
 
@@ -216,6 +220,121 @@ public final class MusicDialogGui {
                         Ph.raw("source", Messages.plain(player, source.langKey()))),
                 List.of(body(Messages.component(player, "menu.results.hint"))),
                 List.of(), actions, 1, backButton(player));
+    }
+
+    // -------------------------------------------------------------- library
+
+    private static Dialog buildResultActions(Player player, PlayerPreferences.Source source, ResultEntry entry) {
+        List<ActionButton> actions = new ArrayList<>();
+
+        actions.add(button(player, "menu.button.play-song", "menu.button.play-song-tip",
+                click(view -> runCommand(player, entry.command()))));
+
+        actions.add(button(player, "menu.button.collect", "menu.button.collect-tip",
+                click(view -> {
+                    runCommand(player, "music collect " + entry.identifier() + " " + entry.plainTitle());
+                    player.showDialog(buildMain(player));
+                })));
+
+        return dialog(player, Messages.component(player, "menu.results.song-title"),
+                List.of(body(entry.label()), body(Messages.component(player, "menu.results.song-hint"))),
+                List.of(), actions, 1, backButton(player));
+    }
+
+    private static Dialog buildLibrary(Player player) {
+        Map<String, List<PlayerCatalogue.Entry>> catalogues =
+                PlayerCatalogue.catalogues(player.getUniqueId());
+
+        List<DialogBody> body = new ArrayList<>();
+        body.add(body(Messages.component(player, "menu.library.hint",
+                Ph.num("count", catalogues.size()))));
+
+        List<ActionButton> actions = new ArrayList<>();
+
+        for (Map.Entry<String, List<PlayerCatalogue.Entry>> entry : catalogues.entrySet()) {
+            String key = entry.getKey();
+            String name = PlayerCatalogue.isFavorites(key)
+                    ? Messages.plain(player, "catalogue.favorites")
+                    : key;
+
+            actions.add(ActionButton.builder(Messages.component(player, "menu.library.line",
+                            Ph.raw("name", name), Ph.num("count", entry.getValue().size())))
+                    .width(WIDE_BUTTON_WIDTH)
+                    .tooltip(Messages.component(player, "menu.library.open-tip"))
+                    .action(click(view -> player.showDialog(buildCatalogue(player, key))))
+                    .build());
+        }
+
+        List<DialogInput> inputs = List.of(
+                DialogInput.text("catalogue_name", Messages.component(player, "menu.library.create-name"))
+                        .width(BODY_WIDTH)
+                        .maxLength(32)
+                        .build()
+        );
+
+        actions.add(button(player, "menu.library.create", "menu.library.create-tip",
+                click(view -> {
+                    String name = safe(view.getText("catalogue_name"));
+
+                    if (name.isEmpty() || !PlayerCatalogue.create(player.getUniqueId(), name)) {
+                        Messages.send(player, "catalogue.create-failed", Ph.raw("name", name));
+                        return;
+                    }
+
+                    Messages.send(player, "catalogue.created", Ph.raw("name", name));
+                    player.showDialog(buildLibrary(player));
+                })));
+
+        return dialog(player, Messages.component(player, "menu.library.title"),
+                body, inputs, actions, 1, backButton(player));
+    }
+
+    private static Dialog buildCatalogue(Player player, String key) {
+        List<PlayerCatalogue.Entry> entries = PlayerCatalogue.entries(player.getUniqueId(), key);
+        String name = PlayerCatalogue.isFavorites(key)
+                ? Messages.plain(player, "catalogue.favorites")
+                : key;
+
+        List<DialogBody> body = new ArrayList<>();
+        body.add(body(Messages.component(player, "menu.catalogue.hint", Ph.num("count", entries.size()))));
+
+        int index = 1;
+
+        for (PlayerCatalogue.Entry entry : entries) {
+            if (index > 20) {
+                break;
+            }
+
+            body.add(body(Messages.component(player, "menu.catalogue.line",
+                    Ph.num("index", index++), Ph.raw("title", entry.displayName()))));
+        }
+
+        List<ActionButton> actions = new ArrayList<>();
+
+        actions.add(button(player, "menu.catalogue.play-all", "menu.catalogue.play-all-tip",
+                click(view -> {
+                    player.closeDialog();
+                    runCommand(player, "music catalogue play " + key);
+                })));
+
+        if (!PlayerCatalogue.isFavorites(key)) {
+            actions.add(button(player, "menu.catalogue.delete", "menu.catalogue.delete-tip",
+                    click(view -> {
+                        PlayerCatalogue.delete(player.getUniqueId(), key);
+                        Messages.send(player, "catalogue.deleted", Ph.raw("name", name));
+                        player.showDialog(buildLibrary(player));
+                    })));
+        }
+
+        return dialog(player, Messages.component(player, "menu.catalogue.title", Ph.raw("name", name)),
+                body, List.of(), actions, 1, backButton(player));
+    }
+
+    /** hit.command() 形如 "music play &lt;identifier&gt;" */
+    private static String identifierOf(String playCommand) {
+        int space = playCommand.lastIndexOf(' ');
+
+        return space < 0 ? playCommand : playCommand.substring(space + 1);
     }
 
     // ---------------------------------------------------------------- queue

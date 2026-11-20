@@ -8,6 +8,8 @@ import dev.klash.simpleVoiceChatMusic.commands.KillCommand;
 import dev.klash.simpleVoiceChatMusic.commands.LangCommand;
 import dev.klash.simpleVoiceChatMusic.commands.MenuCommand;
 import dev.klash.simpleVoiceChatMusic.commands.LoginCommand;
+import dev.klash.simpleVoiceChatMusic.commands.CatalogueCommand;
+import dev.klash.simpleVoiceChatMusic.commands.CollectCommand;
 import dev.klash.simpleVoiceChatMusic.commands.LoopCommand;
 import dev.klash.simpleVoiceChatMusic.commands.SourceCommand;
 import dev.klash.simpleVoiceChatMusic.commands.NowPlayingCommand;
@@ -207,6 +209,10 @@ public final class SimpleVoiceChatMusic extends JavaPlugin implements TabComplet
         subCommands.put("login", new LoginCommand());
         subCommands.put("source", new SourceCommand());
         subCommands.put("loop", new LoopCommand());
+        subCommands.put("collect", new CollectCommand());
+        subCommands.put("like", new CollectCommand());
+        subCommands.put("catalogue", new CatalogueCommand());
+        subCommands.put("playlist", new CatalogueCommand());
         subCommands.put("gui", new MenuCommand());
     }
 

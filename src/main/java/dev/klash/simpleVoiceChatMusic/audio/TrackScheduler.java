@@ -27,6 +27,7 @@ public class TrackScheduler extends AudioEventAdapter {
             return;
         }
 
+        this.group.rememberTrack(track);
         this.group.broadcast("track.now-playing", Ph.comp("track", ModUtils.trackInfo(track.getInfo())));
     }
 
@@ -45,9 +46,11 @@ public class TrackScheduler extends AudioEventAdapter {
             return;
         }
 
-        // 列表循环：队列空了就从头重播当前歌曲
+        // 列表循环：队列空了就按顺序重播本次播放过的歌曲
         if (loop == GroupSettingsManager.LoopMode.ALL && this.group.getQueue().isEmpty()) {
-            this.group.replay(track);
+            if (!this.group.replayHistory()) {
+                this.group.replay(track);
+            }
             return;
         }
 

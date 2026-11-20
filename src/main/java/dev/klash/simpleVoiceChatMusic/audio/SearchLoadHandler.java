@@ -96,11 +96,18 @@ public class SearchLoadHandler implements AudioLoadResultHandler {
                         .clickEvent(ClickEvent.runCommand("/music play " + track.getIdentifier()))
                         .hoverEvent(HoverEvent.showText(hover)));
 
+                Component collect = Messages.component(this.source, "search.collect")
+                        .clickEvent(ClickEvent.runCommand("/music collect " + track.getIdentifier()
+                                + " " + track.getInfo().title))
+                        .hoverEvent(HoverEvent.showText(Messages.component(this.source, "search.collect-hover")));
+
                 text = text.append(Text.literal("\n"))
                         .append(bullet)
                         .append(ModUtils.trackInfo(track.getInfo(), true))
                         .append(Text.literal(" "))
-                        .append(clickable);
+                        .append(clickable)
+                        .append(Text.literal(" "))
+                        .append(collect);
             }
 
             this.sendMessage(text);

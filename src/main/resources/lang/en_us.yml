@@ -68,6 +68,8 @@ search:
   click-to-queue: "<green><bold>[Click to queue]</bold></green>"
   # 鼠标悬停在可点击文字上时显示
   click-hover: "<gray>Queue this song</gray>"
+  collect: "<green>[Save song]</green>"
+  collect-hover: "<gray>Save to My Likes</gray>"
   all-loading: "<gray>Searching every source in parallel...</gray>"
   all-empty: "<red>No results from any source.</red>"
   all-header: "<gray>Found </gray><white><count></white><gray> results across all sources:</gray>"
@@ -158,6 +160,15 @@ tabcomplete:
   source-netease: "NetEase search (login required)"
   source-youtube: "YouTube search"
   source-soundcloud: "SoundCloud search"
+  collect: "Save the current song to My Likes"
+  like: "Same as /music collect (save current song)"
+  catalogue: "Manage your saved catalogues"
+  catalogue-list: "List catalogue contents"
+  catalogue-create: "Create a catalogue"
+  catalogue-delete: "Delete a catalogue"
+  catalogue-play: "Play a whole catalogue in order"
+  catalogue-add: "Add the current song to a catalogue"
+  catalogue-remove: "Remove a track by index"
   loop: "Set loop mode"
   loop-off: "Disable looping"
   loop-one: "Repeat one track"
@@ -223,6 +234,12 @@ menu:
     queue-tip: "Show / clear the queue"
     volume: "Volume"
     volume-tip: "Adjust the group volume on its own page"
+    library: "My music"
+    library-tip: "Saved catalogues / My Likes"
+    play-song: "Play"
+    play-song-tip: "Play this song"
+    collect: "Save"
+    collect-tip: "Save to My Likes"
     settings: "Settings"
     settings-tip: "Bass / language / default source / hidden toggles"
     advanced: "Advanced"
@@ -249,8 +266,26 @@ menu:
     close: "Close"
   results:
     title: "Results · <source>"
+    song-title: "Song actions"
+    song-hint: "<dark_gray>Play it, or save it to My Likes.</dark_gray>"
     empty: "<gray>Type something to search first.</gray>"
     hint: "<dark_gray>Click a result to play it.</dark_gray>"
+  library:
+    title: "My music"
+    hint: "<dark_gray>Open a catalogue to see its songs; custom catalogues can be deleted.</dark_gray>"
+    line: "<white><name></white> <dark_gray>(<count> tracks)</dark_gray>"
+    open-tip: "Open catalogue"
+    create-name: "New catalogue name"
+    create: "Create catalogue"
+    create-tip: "It will appear under My music"
+  catalogue:
+    title: "Catalogue · <name>"
+    hint: "<dark_gray><count> tracks, played in order.</dark_gray>"
+    line: "<gray><index>. </gray><white><title></white>"
+    play-all: "Play catalogue"
+    play-all-tip: "Queue every track in order"
+    delete: "Delete catalogue"
+    delete-tip: "Permanently delete this catalogue (My Likes cannot be deleted)"
   queue:
     title: "Queue"
     current: "<gray>Now playing: </gray><white><title></white>"
@@ -330,9 +365,37 @@ login:
 
 # ── Loop playback ──────────────────────────────────────────────
 loop:
-  "off": "Off"
+  "off": "Sequential"
   one: "Repeat one"
-  all: "Repeat all"
+  all: "Repeat queue"
   current: "<gray>Loop mode: </gray><white><mode></white>"
   set: "<gray><player> set the loop mode to </gray><white><mode></white>"
   usage: '<red>Usage: </red><white>/music loop \<off|one|all></white>'
+
+catalogue:
+  favorites: "My Likes"
+  header: "<gray>Your catalogues (<count>):</gray>"
+  line: "<gray>- </gray><white><name></white> <dark_gray>(<count> tracks)</dark_gray>"
+  usage: '<red>Usage: </red><white>/music catalogue \<list|create|delete|play|add|remove></white>'
+  created: "<green>Catalogue created: </green><white><name></white>"
+  create-failed: "<red>Could not create (empty, duplicate or too long): </red><white><name></white>"
+  deleted: "<green>Catalogue deleted: </green><white><name></white>"
+  cannot-delete: "<red>\"My Likes\" is the default catalogue and cannot be deleted.</red>"
+  unknown: "<red>Catalogue not found.</red>"
+  unknown-name: "<red>Catalogue not found: </red><white><name></white>"
+  empty: "<gray>Catalogue <white><name></white> is empty.</gray>"
+  playing: "<gray>Playing catalogue </gray><white><name></white><gray> (<count> tracks)...</gray>"
+  played: "<green>Queued </green><white><count></white><green> tracks from <name>.</green>"
+  added: "<green>Added to </green><white><name></white><green>: </green><white><title></white>"
+  duplicate: "<gray>Already in the catalogue: </gray><white><title></white>"
+  removed: "<green>Removed from </green><white><name></white><green>.</green>"
+  remove-failed: "<red>Remove failed: catalogue or index not found.</red>"
+  entries-header: "<gray>Catalogue <white><name></white> (<count> tracks):</gray>"
+  entry-line: "<gray><index>. </gray><white><title></white>"
+
+
+collect:
+  added: "<green>Saved to My Likes: </green><white><title></white>"
+  duplicate: "<gray>Already saved: </gray><white><title></white>"
+  no-track: "<gray>Nothing is playing right now.</gray>"
+  usage: '<red>Usage: </red><white>/music collect \<id> [title]</white><gray> or </gray><white>/music like</white>'

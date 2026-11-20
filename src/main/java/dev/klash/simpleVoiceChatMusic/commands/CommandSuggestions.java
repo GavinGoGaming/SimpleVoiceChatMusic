@@ -26,7 +26,7 @@ public final class CommandSuggestions {
 
     private static final List<String> SUBCOMMANDS = List.of(
             "play", "search", "now-playing", "queue", "skip",
-            "pause", "resume", "stop", "volume", "bassboost", "lang", "menu", "login", "source", "loop", "kill"
+            "pause", "resume", "stop", "volume", "bassboost", "lang", "menu", "login", "source", "loop", "collect", "like", "catalogue", "kill"
     );
 
     private static final List<String> VOLUME_VALUES = List.of("0", "10", "25", "50", "75", "100");
@@ -102,6 +102,14 @@ public final class CommandSuggestions {
                 add(result, "status", "tabcomplete.login-status", partial);
                 add(result, "logout", "tabcomplete.login-logout", partial);
                 add(result, "cookie", "tabcomplete.login-cookie", partial);
+            }
+            case "catalogue" -> {
+                add(result, "list", "tabcomplete.catalogue-list", partial);
+                add(result, "create", "tabcomplete.catalogue-create", partial);
+                add(result, "delete", "tabcomplete.catalogue-delete", partial);
+                add(result, "play", "tabcomplete.catalogue-play", partial);
+                add(result, "add", "tabcomplete.catalogue-add", partial);
+                add(result, "remove", "tabcomplete.catalogue-remove", partial);
             }
             case "loop" -> {
                 add(result, "off", "tabcomplete.loop-off", partial);

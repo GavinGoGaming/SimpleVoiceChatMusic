@@ -22,7 +22,9 @@ general:
     <white>/music volume \<0-100> | bassboost \<0-200></white> <dark_gray>-</dark_gray> <gray>音量与低音</gray>
     <white>/music lang [语言代码]</white> <dark_gray>-</dark_gray> <gray>切换提示语言</gray>
     <white>/music menu</white> <dark_gray>-</dark_gray> <gray>打开图形菜单</gray>
-    <white>/music loop \<off | one | all></white> <dark_gray>-</dark_gray> <gray>循环播放（关闭 / 单曲 / 列表）</gray>
+    <white>/music loop \<off | one | all></white> <dark_gray>-</dark_gray> <gray>播放模式（顺序 / 单曲循环 / 列表循环）</gray>
+    <white>/music collect \<标识> [标题] | /music like</white> <dark_gray>-</dark_gray> <gray>收藏歌曲</gray>
+    <white>/music catalogue \<list | create | play | add | remove | delete></white> <dark_gray>-</dark_gray> <gray>我的音乐 / 收藏目录</gray>
     <white>/music source \<bilibili | netease | youtube | soundcloud></white> <dark_gray>-</dark_gray> <gray>切换自己的默认搜索音源</gray>
     <white>/music login \<netease|bilibili></white> <dark_gray>-</dark_gray> <gray>扫码登录网易云 / B 站（管理员）</gray>
     <white>/music kill</white> <dark_gray>-</dark_gray> <gray>强制重启本组的播放器</gray>
@@ -62,6 +64,8 @@ search:
   bullet: "  <dark_gray>-</dark_gray> "
   click-to-queue: "<green><bold>[点击加入队列]</bold></green>"
   click-hover: "<gray>把这首歌加入队列</gray>"
+  collect: "<green>[收藏歌曲]</green>"
+  collect-hover: "<gray>收藏到「我的喜欢」</gray>"
   all-loading: "<gray>正在并发搜索全部音源…</gray>"
   all-empty: "<red>全部音源都没有找到结果。</red>"
   all-header: "<gray>全部音源找到 </gray><white><count></white><gray> 条结果：</gray>"
@@ -151,6 +155,15 @@ tabcomplete:
   source-netease: "网易云搜索（需要先登录）"
   source-youtube: "YouTube 搜索"
   source-soundcloud: "SoundCloud 搜索"
+  collect: "收藏当前播放到「我的喜欢」"
+  like: "同 /music collect（收藏当前播放）"
+  catalogue: "管理你的收藏目录（歌单）"
+  catalogue-list: "查看目录内容"
+  catalogue-create: "新建目录"
+  catalogue-delete: "删除目录"
+  catalogue-play: "按顺序播放整个目录"
+  catalogue-add: "把当前歌曲加入目录"
+  catalogue-remove: "从目录移除（需要序号）"
   loop: "设置循环播放"
   loop-off: "关闭循环"
   loop-one: "单曲循环"
@@ -216,6 +229,12 @@ menu:
     queue-tip: "查看 / 清空队列"
     volume: "音量"
     volume-tip: "单独调整本组音量"
+    library: "我的音乐"
+    library-tip: "收藏目录 / 我的喜欢"
+    play-song: "播放"
+    play-song-tip: "播放这首歌"
+    collect: "收藏"
+    collect-tip: "收藏到「我的喜欢」"
     settings: "设置"
     settings-tip: "低音 / 语言 / 默认音源 / 隐藏开关"
     advanced: "高级"
@@ -242,8 +261,26 @@ menu:
     close: "关闭"
   results:
     title: "搜索结果 · <source>"
+    song-title: "歌曲操作"
+    song-hint: "<dark_gray>可以播放，或收藏到「我的喜欢」。</dark_gray>"
     empty: "<gray>请先在输入框里填写要搜索的内容。</gray>"
     hint: "<dark_gray>点击任意一条直接播放。</dark_gray>"
+  library:
+    title: "我的音乐"
+    hint: "<dark_gray>点目录查看内容；新建的目录随时可以删除。</dark_gray>"
+    line: "<white><name></white> <dark_gray>(<count> 首)</dark_gray>"
+    open-tip: "打开目录"
+    create-name: "新目录名字"
+    create: "创建目录"
+    create-tip: "创建后可在「我的音乐」里看到"
+  catalogue:
+    title: "目录 · <name>"
+    hint: "<dark_gray>共 <count> 首，按顺序播放。</dark_gray>"
+    line: "<gray><index>. </gray><white><title></white>"
+    play-all: "播放整个目录"
+    play-all-tip: "按顺序加入队列"
+    delete: "删除目录"
+    delete-tip: "永久删除这个目录（「我的喜欢」不可删）"
   queue:
     title: "播放队列"
     current: "<gray>正在播放：</gray><white><title></white>"
@@ -323,9 +360,37 @@ login:
 
 # ── 循环播放 ────────────────────────────────────────────────────
 loop:
-  "off": "关闭"
+  "off": "顺序播放"
   one: "单曲循环"
   all: "列表循环"
   current: "<gray>当前循环模式：</gray><white><mode></white>"
   set: "<gray><player> 把循环模式设为 </gray><white><mode></white>"
   usage: '<red>用法：</red><white>/music loop \<off|one|all></white>'
+
+catalogue:
+  favorites: "我的喜欢"
+  header: "<gray>你的收藏目录（<count> 个）：</gray>"
+  line: "<gray>· </gray><white><name></white> <dark_gray>(<count> 首)</dark_gray>"
+  usage: '<red>用法：</red><white>/music catalogue \<list|create|delete|play|add|remove></white>'
+  created: "<green>已创建目录：</green><white><name></white>"
+  create-failed: "<red>创建失败（名字为空、重复或过长）：</red><white><name></white>"
+  deleted: "<green>已删除目录：</green><white><name></white>"
+  cannot-delete: "<red>「我的喜欢」是默认目录，不能删除。</red>"
+  unknown: "<red>找不到目录。</red>"
+  unknown-name: "<red>找不到目录：</red><white><name></white>"
+  empty: "<gray>目录 <white><name></white> 还是空的。</gray>"
+  playing: "<gray>开始播放目录 </gray><white><name></white><gray>（<count> 首）…</gray>"
+  played: "<green>已把 </green><white><count></white><green> 首加入队列（目录 <name>）。</green>"
+  added: "<green>已加入 </green><white><name></white><green>：</green><white><title></white>"
+  duplicate: "<gray>已经在目录里了：</gray><white><title></white>"
+  removed: "<green>已从 </green><white><name></white><green> 移除。</green>"
+  remove-failed: "<red>移除失败：目录或序号不存在。</red>"
+  entries-header: "<gray>目录 <white><name></white>（<count> 首）：</gray>"
+  entry-line: "<gray><index>. </gray><white><title></white>"
+
+
+collect:
+  added: "<green>已收藏：</green><white><title></white>"
+  duplicate: "<gray>已经收藏过了：</gray><white><title></white>"
+  no-track: "<gray>当前没有播放中的歌曲。</gray>"
+  usage: '<red>用法：</red><white>/music collect \<标识> [标题]</white><gray> 或 </gray><white>/music like</white>'

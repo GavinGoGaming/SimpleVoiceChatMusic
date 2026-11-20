@@ -12,6 +12,17 @@ public final class Cooldowns {
 
     private static final Map<String, Long> LAST_USED = new ConcurrentHashMap<>();
 
+    /** 插件内部触发的命令（例如"全部音源"选定结果后播放）不占用玩家冷却 */
+    private static final ThreadLocal<Boolean> BYPASS = ThreadLocal.withInitial(() -> false);
+
+    public static void beginBypass() {
+        BYPASS.set(true);
+    }
+
+    public static void endBypass() {
+        BYPASS.set(false);
+    }
+
     private Cooldowns() {
     }
 
@@ -22,7 +33,7 @@ public final class Cooldowns {
      * @return 0 表示放行；否则返回还需要等待的毫秒数
      */
     public static long tryAcquire(UUID playerId, String action, long cooldownMs) {
-        if (cooldownMs <= 0) {
+        if (cooldownMs <= 0 || BYPASS.get()) {
             return 0L;
         }
 

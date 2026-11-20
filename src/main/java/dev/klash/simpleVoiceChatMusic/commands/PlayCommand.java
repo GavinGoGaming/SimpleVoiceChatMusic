@@ -373,7 +373,13 @@ public class PlayCommand implements Command {
                 runOnMainThread(() -> {
                     Messages.send(context, "play.all-selected",
                             Ph.raw("source", Messages.plain(context, hit.sourceLangKey())));
-                    context.performCommand(hit.command());
+
+                    dev.klash.simpleVoiceChatMusic.util.Cooldowns.beginBypass();
+                    try {
+                        context.performCommand(hit.command());
+                    } finally {
+                        dev.klash.simpleVoiceChatMusic.util.Cooldowns.endBypass();
+                    }
                 });
             });
         });

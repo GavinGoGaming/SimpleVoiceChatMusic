@@ -179,10 +179,20 @@ public class SearchCommand implements Command {
                     .append(bullet)
                     .append(line)
                     .append(Text.literal(" "))
-                    .append(clickable);
+                    .append(clickable)
+                    .append(Text.literal(" "))
+                    .append(collectLabel(viewer, identifierOf(hit.command()),
+                            hit.display()));
         }
 
         return text;
+    }
+
+    /** hit.command() 形如 "music play <identifier>" */
+    private static String identifierOf(String playCommand) {
+        int space = playCommand.lastIndexOf(' ');
+
+        return space < 0 ? playCommand : playCommand.substring(space + 1);
     }
 
     /**
@@ -258,6 +268,15 @@ public class SearchCommand implements Command {
         return 0;
     }
 
+    /** 搜索结果里的「收藏歌曲」按钮（写入玩家的"我的喜欢"） */
+    private Component collectLabel(Player viewer, String identifier, String title) {
+        Component label = styledLabel(Messages.component(viewer, "search.collect"));
+
+        return label
+                .clickEvent(ClickEvent.runCommand("/music collect " + identifier + " " + title))
+                .hoverEvent(HoverEvent.showText(Messages.component(viewer, "search.collect-hover")));
+    }
+
     private Component renderNetEaseResults(Player viewer, List<NetEaseApi.Song> songs) {
         Component text = Messages.render(viewer, "search.header", Ph.num("count", songs.size()));
         Component bullet = Messages.component(viewer, "search.bullet");
@@ -284,7 +303,9 @@ public class SearchCommand implements Command {
                     .append(bullet)
                     .append(line)
                     .append(Text.literal(" "))
-                    .append(clickable);
+                    .append(clickable)
+                    .append(Text.literal(" "))
+                    .append(collectLabel(viewer, song.identifier(), song.displayName()));
         }
 
         return text;
@@ -312,7 +333,9 @@ public class SearchCommand implements Command {
                     .append(bullet)
                     .append(line)
                     .append(Text.literal(" "))
-                    .append(clickable);
+                    .append(clickable)
+                    .append(Text.literal(" "))
+                    .append(collectLabel(viewer, video.identifier(), video.displayName()));
         }
 
         return text;

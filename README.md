@@ -1,4 +1,4 @@
-# Simple Voice Chat Music —— Paper 语音聊天音乐插件 · 3.2.0
+# Simple Voice Chat Music —— Paper 语音聊天音乐插件 · 3.3.0
 
 > 本插件是 [Simple Voice Chat Music](https://modrinth.com/mod/simple-voice-chat-music)（ItzDerock 的 Fabric 模组）的 **Paper 移植版**。
 > 在语音聊天组里和好友一起听歌：B 站、网易云、YouTube、SoundCloud、直链音频都能点，支持图形菜单、滚动歌词和循环播放。
@@ -57,7 +57,9 @@ plugins/SimpleVoiceChatMusic/
 | `/music stop` | 停止播放**并清空队列** |
 | `/music volume <0-100>` | 设置本组音量 |
 | `/music bassboost <0-200>` | 设置本组低音增强 |
-| `/music loop <off\|one\|all>` | 循环模式：关闭 / 单曲 / 列表 |
+| `/music loop <off\|one\|all>` | 播放模式：顺序 / 单曲循环 / 列表循环 |
+| `/music collect <标识> [标题]` / `/music like` | 收藏歌曲到「我的喜欢」 |
+| `/music catalogue <list\|create\|play\|add\|remove\|delete> ...` | 管理收藏目录（歌单） |
 | `/music source [bilibili\|netease\|youtube\|soundcloud\|all\|reset]` | 查看 / 切换自己的默认音源 |
 | `/music menu` | 打开图形播放器菜单（1.21.7+） |
 | `/music login [netease\|bilibili]` | 管理员：扫码登录（二维码地图） |
@@ -82,6 +84,7 @@ plugins/SimpleVoiceChatMusic/
   - **播放队列**：当前歌曲 + 等待队列 + 一键清空；
   - **音量**：单独的音量滑块页；
   - **设置**：低音、语言、循环模式、每玩家默认音源、隐藏歌词、隐藏进度条；
+  - **我的音乐**：收藏目录列表、新建目录、查看目录内容、播放整个目录、删除自定义目录；
   - **高级**：正在播放详情、重置播放器、登录网易云 / 登录 B 站 / 退出登录、注册语音服务；
 - 每个二级页面都有「返回」，主界面有「关闭」。
 
@@ -233,11 +236,34 @@ lyrics:
 /music loop all      # 列表循环：队列播完后重播当前歌曲
 ```
 
-- 按**语音组**生效；
-- 循环重播不会重复播报「开始播放」；
+- `off` = **顺序播放**：队列播完就停；
+- `one` = **单曲循环**：当前歌曲从头重播；
+- `all` = **列表循环**：队列播完后按顺序重播本次播放过的歌曲；
+- 按**语音组**生效，循环重播不会重复播报「开始播放」；
 - 菜单 → 设置 → 循环模式 也可切换。
 
 ---
+
+## 我的音乐（收藏目录）
+
+每个玩家默认有一个「我的喜欢」，还可以自由创建其他目录；除「我的喜欢」外都可以删除。
+数据保存在 `plugins/PlayerMusicCatalogue/<玩家UUID>.json`。
+
+```bash
+/music like                          # 收藏当前播放的歌曲到「我的喜欢」
+/music collect <标识> [标题]          # 收藏指定歌曲（搜索结果里的「收藏歌曲」按钮就是它）
+/music catalogue                     # 查看所有目录
+/music catalogue create 我的歌单       # 新建目录
+/music catalogue delete 我的歌单       # 删除目录（「我的喜欢」不可删）
+/music catalogue play 我的歌单         # 按顺序播放整个目录
+/music catalogue add 我的歌单          # 把当前歌曲加入该目录
+/music catalogue list 我的歌单         # 查看目录内容
+/music catalogue remove 我的歌单 2     # 移除第 2 首
+```
+
+- 聊天栏搜索结果的「[点击加入队列]」旁边新增「[收藏歌曲]」；
+- 菜单里的搜索结果点进去有「播放 / 收藏」两个按钮；
+- 菜单 →「我的音乐」可以浏览目录、创建目录、播放整个目录、删除自定义目录。
 
 ## 每玩家偏好
 
@@ -500,7 +526,7 @@ general:
 
 ```bash
 mvn clean package
-# -> target/SimpleVoiceChatMusic-3.2.0.jar
+# -> target/SimpleVoiceChatMusic-3.3.0.jar
 ```
 
 需要 JDK 25；产物为 shade 后的胖 jar（已打包 lavaplayer、youtube-source、OkHttp、Gson 等）。

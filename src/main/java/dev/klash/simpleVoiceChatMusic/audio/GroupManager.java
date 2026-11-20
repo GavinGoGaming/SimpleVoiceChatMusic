@@ -55,6 +55,10 @@ public class GroupManager {
 
     /** 循环重播时不再重复播报"开始播放" */
     private final AtomicBoolean loopReplay = new AtomicBoolean(false);
+
+    /** 本次播放过的歌曲（列表循环用，最多 50 首） */
+    private final java.util.ArrayDeque<AudioTrack> history = new java.util.ArrayDeque<>();
+    private static final int HISTORY_LIMIT = 50;
     private final boolean bossBarEnabled;
     private final BossBar.Color bossBarColor;
     private final BossBar.Overlay bossBarOverlay;
@@ -301,6 +305,51 @@ public class GroupManager {
         } catch (RejectedExecutionException e) {
             this.loopReplay.set(false);
         }
+    }
+
+    /** 记录一首开始播放的歌，供列表循环重播 */
+    public void rememberTrack(AudioTrack track) {
+        if (track == null) {
+            return;
+        }
+
+        try {
+            synchronized (this.history) {
+                if (this.history.size() >= HISTORY_LIMIT) {
+                    this.history.removeFirst();
+                }
+                this.history.addLast(track.makeClone());
+            }
+        } catch (Exception ignored) {
+            // 不支持克隆的音源直接忽略
+        }
+    }
+
+    /** 列表循环：队列播完后按顺序重播本组本次播放过的歌曲 */
+    public boolean replayHistory() {
+        java.util.List<AudioTrack> snapshot;
+
+        synchronized (this.history) {
+            if (this.history.isEmpty()) {
+                return false;
+            }
+
+            snapshot = new java.util.ArrayList<>(this.history);
+            this.history.clear();
+        }
+
+        for (AudioTrack track : snapshot) {
+            try {
+                AudioTrack clone = track.makeClone();
+                clone.setPosition(0);
+                this.queue.offer(clone);
+            } catch (Exception ignored) {
+                // 跳过无法克隆的音源
+            }
+        }
+
+        this.nextTrack();
+        return true;
     }
 
     /** 取出并清除"这次 onTrackStart 是循环重播"的标记 */
