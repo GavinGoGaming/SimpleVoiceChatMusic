@@ -1,0 +1,417 @@
+# =====================================================================================
+#  SimpleVoiceChatMusic - 简体中文 (zh_cn)
+# =====================================================================================
+#  语法：MiniMessage  https://docs.advntr.dev/minimessage/format.html
+#  颜色标签示例：<red> <gold> <yellow> <green> <aqua> <gray> <dark_gray> <white> <bold>
+#  占位符（<player> 等）由代码注入，翻译时请原样保留。
+# =====================================================================================
+
+general:
+  prefix: "<dark_gray>[</dark_gray><aqua>音乐</aqua><dark_gray>]</dark_gray> "
+  no-permission: "<red>你没有权限这样做。</red>"
+  player-only: "<red>这条命令只能由玩家执行。</red>"
+  unknown-subcommand: "<red>未知的子命令。</red> <gray>输入 <white>/music</white> 查看命令列表。</gray>"
+  cooldown: "<gray>慢一点，<white><seconds> 秒</white>后再试。</gray>"
+  usage: |-
+    <gray>可用命令：</gray>
+    <white>/music play \<歌名 | Spotify 链接></white> <dark_gray>-</dark_gray> <gray>搜索并播放第一个结果</gray>
+    <white>/music search \<歌名></white> <dark_gray>-</dark_gray> <gray>从搜索结果里挑一首</gray>
+    <white>/music now-playing</white> <dark_gray>-</dark_gray> <gray>查看当前播放</gray>
+    <white>/music queue</white> <dark_gray>-</dark_gray> <gray>查看播放队列</gray>
+    <white>/music skip | pause | resume | stop</white> <dark_gray>-</dark_gray> <gray>播放控制</gray>
+    <white>/music volume \<0-100> | bassboost \<0-200></white> <dark_gray>-</dark_gray> <gray>音量与低音</gray>
+    <white>/music lang [语言代码]</white> <dark_gray>-</dark_gray> <gray>切换提示语言</gray>
+    <white>/music menu</white> <dark_gray>-</dark_gray> <gray>打开图形菜单</gray>
+    <white>/music loop \<off | one | all></white> <dark_gray>-</dark_gray> <gray>播放模式（顺序 / 单曲循环 / 列表循环）</gray>
+    <white>/music collect \<标识> [标题] | /music like</white> <dark_gray>-</dark_gray> <gray>收藏歌曲</gray>
+    <white>/music catalogue \<list | create | play | add | remove | delete></white> <dark_gray>-</dark_gray> <gray>我的音乐 / 收藏目录</gray>
+    <white>/music source \<bilibili | netease | youtube | soundcloud></white> <dark_gray>-</dark_gray> <gray>切换自己的默认搜索音源</gray>
+    <white>/music login \<netease|bilibili></white> <dark_gray>-</dark_gray> <gray>扫码登录网易云 / B 站（管理员）</gray>
+    <white>/music kill</white> <dark_gray>-</dark_gray> <gray>强制重启本组的播放器</gray>
+  error: "<red>执行命令时出错，详细信息请查看服务器控制台。</red>"
+
+voicechat:
+  not-ready: "<yellow>语音聊天还在启动中，请稍后再试。</yellow>"
+  not-connected: "<red>你还没有连接到语音聊天。</red>"
+  no-group: "<red>你不在任何语音聊天组里。</red>"
+
+play:
+  all-selected: "<gray>全部音源：已选择 </gray><white><source></white><gray> 的结果播放。</gray>"
+  usage: '<gray>用法：<white>/music play \<歌名 | Spotify 链接></white></gray>'
+  loading: "<gray>正在加载歌曲……</gray>"
+  queued: "<gray><player> 点播了 <track></gray>"
+  queue-full: "<red>队列已满（或玩家已离开），这首歌没有加入队列。</red>"
+  no-matches: "<red>没有找到匹配的歌曲。</red>"
+  failed: "<red>加载失败：<reason></red>"
+  failed-internal: "<red>这首歌加载失败，详细信息请查看服务器控制台。</red>"
+  spotify-not-configured: "<yellow>Spotify 尚未配置（config.yml 里的 spotify.client-id / spotify.client-secret），已改为普通搜索。</yellow>"
+  spotify-failed: "<red>查询 Spotify 曲目失败：<reason></red>"
+  error-timeout: "<red>音源服务器响应超时。</red><gray>稍后再试，或换一个链接。</gray>"
+  error-disconnected: "<red>音源服务器中途断开了连接（可能是防盗链，或 CDN 的切片本身是坏的）。</red><gray>把文件下载后放进 music 目录再播放通常就能用。</gray>"
+  error-unreachable: "<red>无法连接到音源服务器。</red><gray>请检查链接和服务器网络。</gray>"
+  error-tls: "<red>与音源服务器的 TLS 握手失败。</red><gray>可以试试把 https:// 换成 http://。</gray>"
+  error-server: "<red>音源服务器返回了错误状态码。</red>"
+  error-forbidden: "<red>音源服务器拒绝了请求（HTTP 401/403）。</red><gray>可能需要登录，或者做了防盗链。</gray>"
+  error-not-found: "<red>这个链接不存在（HTTP 404）。</red>"
+  error-empty: "<red>服务器声明了文件，却一个字节都没返回（CDN 切片损坏或防盗链）。</red><gray>换一个链接试试。</gray>"
+  error-not-audio: "<red>这个链接不是音频文件。</red><gray>它返回的像是网页或接口数据。</gray>"
+  unsupported-platform: '<red>暂不支持 <platform> 的链接。</red><gray>可以直接搜索歌名：<white>/music play \<歌名></white></gray>'
+
+search:
+  usage: '<gray>用法：<white>/music search \<歌名></white></gray>'
+  loading: "<gray>正在搜索……</gray>"
+  header: "<gray>找到 <count> 个结果：</gray>"
+  bullet: "  <dark_gray>-</dark_gray> "
+  click-to-queue: "<green><bold>[点击加入队列]</bold></green>"
+  click-hover: "<gray>把这首歌加入队列</gray>"
+  next-page: "<gray>—— 第 <page> 页 ——</gray> <green>[下一页]</green>"
+  next-page-hover: "<gray>查看下一页搜索结果</gray>"
+  collect: "<green>[收藏歌曲]</green>"
+  collect-hover: "<gray>收藏到「我的喜欢」</gray>"
+  all-loading: "<gray>正在并发搜索全部音源…</gray>"
+  all-empty: "<red>全部音源都没有找到结果。</red>"
+  all-header: "<gray>全部音源找到 </gray><white><count></white><gray> 条结果：</gray>"
+
+queue:
+  current: "<gray>正在播放：</gray><track>"
+  entry: "<gray><index>.</gray> <track>"
+  empty: "<gray>队列是空的。</gray>"
+
+now-playing:
+  nothing: "<gray>当前没有在播放。</gray>"
+  line: "<gray>正在播放</gray> <track> <dark_gray>(<position>/<duration>)</dark_gray> <dark_gray>·</dark_gray> <white><volume>%</white> <gray>音量</gray> <dark_gray>·</dark_gray> <white><bass>%</white> <gray>低音增强</gray>"
+
+skip:
+  done: "<gray><player> 跳过了当前歌曲。</gray>"
+
+pause:
+  done: "<gray><player> 暂停了播放。</gray>"
+
+resume:
+  done: "<gray><player> 恢复了播放。</gray>"
+
+stop:
+  done: "<gray><player> 停止了播放并清空了队列。</gray>"
+
+volume:
+  usage: '<gray>用法：<white>/music volume \<0-100></white></gray>'
+  invalid: "<red>音量必须是整数。</red>"
+  range: "<red>音量必须在 0 到 100 之间。</red>"
+  set: "<gray><player> 把音量设为 <white><volume>%</white>。</gray>"
+
+bassboost:
+  usage: '<gray>用法：<white>/music bassboost \<0-200></white></gray>'
+  invalid: "<red>低音增强必须是一个数字。</red>"
+  range: "<red>低音增强必须在 0 到 200 之间。</red>"
+  set: "<gray><player> 把低音增强设为 <white><bass>%</white>。</gray>"
+
+kill:
+  warning: "<red><bold>注意！</bold>这会强制结束本组的播放器，音频包突然中断时组内玩家可能会听到一下杂音。</red><newline><newline><gray>确认无误请再执行一次。</gray>"
+  broadcast: "<red><player> 强制结束了播放器。</red>"
+
+track:
+  now-playing: "<gray>正在播放：</gray><track>"
+  failed: "<red>播放失败：<reason></red>"
+  internal-error: "<red>播放失败，原因是内部错误。</red>"
+  stuck: "<yellow>歌曲卡住了，已跳过。</yellow>"
+
+playback:
+  queue-empty: "<gray>没有更多歌曲可播放了。</gray>"
+
+lang:
+  current: "<gray>当前语言：<white><language></white></gray>"
+  available: "<gray>可用语言：<white><languages></white></gray>"
+  set: "<gray>已将语言设置为 <white><language></white>。</gray>"
+  reset: "<gray>已恢复自动选择语言（当前为 <white><language></white>）。</gray>"
+  unknown: "<red>未知的语言 <white><language></white>。</red> <gray>可用：</gray><white><languages></white>"
+
+service:
+  already: "<gray>语音聊天服务已经注册过了。</gray>"
+  attempted: "<gray>已尝试注册，详细信息请查看控制台。</gray>"
+
+# Simple Voice Chat 客户端设置里显示的音量分类（纯文本，不要写标签）
+category:
+  name: "音乐"
+  description: "串流音乐的音量。"
+
+# BOSS 栏：<title> 是文件名（取不到文件名时用歌曲标题），
+# <position>/<duration> 形如 1:23/3:45。
+bossbar:
+  title: "<white><title></white> <dark_gray>[</dark_gray><gray><position></gray><dark_gray>/</dark_gray><gray><duration></gray><dark_gray>]</dark_gray>"
+  unknown-duration: "--:--"
+
+# 酷狗音乐
+
+bilibili:
+  no-results: "<red>B 站没有找到相关视频。</red>"
+  invalid-link: "<red>这个 B 站链接里没有解析到 BV 号。</red>"
+  error: "<red>B 站接口请求失败：<reason></red>"
+  no-audio: "<red>这个视频没有可播放的音频（可能需要大会员或地区限制）。</red>"
+  fallback: "<gray>B 站没有结果，已回退到 YouTube 搜索。</gray>"
+# ── Tab 补全的悬停提示 ──────────────────────────────────────────────
+tabcomplete:
+  login: "网易云扫码登录（管理员）"
+  netease: "网易云搜索，例如 netease:歌名"
+  source: "切换自己的默认搜索播放音源"
+  source-bilibili: "B 站搜索"
+  source-netease: "网易云搜索（需要先登录）"
+  source-youtube: "YouTube 搜索"
+  source-soundcloud: "SoundCloud 搜索"
+  collect: "收藏当前播放到「我的喜欢」"
+  like: "同 /music collect（收藏当前播放）"
+  catalogue: "管理你的收藏目录（歌单）"
+  catalogue-list: "查看目录内容"
+  catalogue-create: "新建目录"
+  catalogue-delete: "删除目录"
+  catalogue-play: "按顺序播放整个目录"
+  catalogue-add: "把当前歌曲加入目录"
+  catalogue-remove: "从目录移除（需要序号）"
+  loop: "设置循环播放"
+  loop-off: "关闭循环"
+  loop-one: "单曲循环"
+  loop-all: "列表循环"
+  source-all: "一次搜索所有音源"
+  source-reset: "恢复服务器默认音源"
+  menu: "打开图形菜单（Dialog 界面）"
+  play: "播放链接（URL / B 站）或搜索歌名，和原来的用法一样"
+  search: "搜索 B 站视频，点击结果加入队列"
+  now-playing: "查看当前正在播放的歌曲"
+  queue: "查看播放队列"
+  skip: "跳到下一首"
+  pause: "暂停播放"
+  resume: "继续播放"
+  stop: "停止播放并清空队列"
+  volume: "设置音量（0-100）"
+  bassboost: "设置低音增强（0-200）"
+  lang: "切换提示语言"
+  kill: "强制重启本组播放器（卡住时用）"
+  url: "粘贴完整链接：B 站视频 / 番剧 / 直链音频"
+  bilibili: "B 站视频标识，例如 bilibili://BV1xx411c7mD"
+  ytsearch: "强制用 YouTube 搜索，例如 ytsearch:歌名"
+  scsearch: "强制用 SoundCloud 搜索，例如 scsearch:歌名"
+  lang-value: "选择语言代码，或 auto 跟随客户端"
+  volume-value: "输入 0-100 的整数"
+  bassboost-value: "输入 0-200 的整数"
+
+# ── 图形菜单（1.21.7+ Dialog）─────────────────────────────────────
+menu:
+  collect:
+    title: "收藏歌曲"
+    hint: "<dark_gray>把 <white><title></white> 收藏到哪个歌单？</dark_gray>"
+    line: "<white><name></white> <dark_gray>(<count> 首)</dark_gray>"
+  title: "音乐播放器"
+  body:
+    status: "<gray>队列 <white><count></white> 首 · 音量 <white><volume></white> · 低音 <white><bass></white> · 循环 <white><loop></white></gray>"
+    now-playing: "<white><title></white>"
+    idle: "<gray>当前没有播放。</gray>"
+    no-group: "<red>你不在语音聊天组里，先加入一个组（例如「音乐」）。</red>"
+    queue-preview: "<gray>接下来：</gray><white><tracks></white>"
+    hint: "<dark_gray>输入链接或歌名后按「播放」；「搜索」会在当前音源（<source>）里查结果。</dark_gray>"
+  input:
+    query: "链接 / 歌名"
+    volume: "音量"
+    bassboost: "低音增强"
+    language: "语言"
+    source: "默认音源"
+    loop: "循环模式"
+    hide-lyrics: "隐藏歌词（ActionBar）"
+    hide-progress: "隐藏进度条（Boss 栏）"
+  language:
+    auto: "auto（跟随客户端）"
+  button:
+    play: "播放"
+    play-tip: "播放输入框里的链接或歌名（使用你的默认音源）"
+    search: "搜索"
+    search-tip: "在当前默认音源里搜索，结果点击即播"
+    pause: "暂停"
+    pause-tip: "暂停播放"
+    resume: "继续"
+    resume-tip: "继续播放"
+    skip: "下一首"
+    skip-tip: "跳过当前歌曲"
+    stop: "停止"
+    stop-tip: "停止播放并清空队列"
+    queue: "播放队列"
+    queue-tip: "查看 / 清空队列"
+    volume: "音量"
+    volume-tip: "单独调整本组音量"
+    library: "我的音乐"
+    library-tip: "收藏目录 / 我的喜欢"
+    play-song: "播放"
+    play-song-tip: "播放这首歌"
+    collect: "收藏"
+    collect-tip: "收藏到「我的喜欢」"
+    remove-song: "从收藏删除"
+    remove-song-tip: "从当前歌单移除这首歌"
+    settings: "设置"
+    settings-tip: "低音 / 语言 / 默认音源 / 隐藏开关"
+    advanced: "高级"
+    advanced-tip: "账号登录、重置播放器、注册语音服务"
+    now-playing: "正在播放"
+    now-playing-tip: "查看当前歌曲和进度"
+    apply-volume: "应用音量"
+    apply-volume-tip: "把上面的音量应用到本组"
+    apply-settings: "应用设置"
+    apply-settings-tip: "保存音量、低音、语言和默认音源"
+    clear-queue: "清空队列"
+    clear-queue-tip: "清掉等待队列（当前歌曲继续播放）"
+    login-netease: "登录网易云"
+    login-netease-tip: "扫码登录网易云（管理员）"
+    login-bilibili: "登录 B 站"
+    login-bilibili-tip: "扫码登录 B 站（管理员）"
+    logout: "退出登录"
+    logout-tip: "删除所有已保存的账号凭证（管理员）"
+    kill: "重置播放器"
+    kill-tip: "强制重启本组播放器（卡住时用）"
+    register-service: "注册语音服务"
+    register-service-tip: "SVC 服务没注册上时手动补一次（管理员）"
+    back: "返回"
+    close: "关闭"
+  results:
+    prev-page: "[上一页]"
+    next-page: "[下一页]"
+    prev-tip: "上一页搜索结果"
+    next-tip: "下一页搜索结果"
+    more: "<dark_gray>共 <total> 条，这里显示前 14 条；用 </dark_gray><white>/music search</white><dark_gray> 查看更多。</dark_gray>"
+    title: "搜索结果 · <source>"
+    song-title: "歌曲操作"
+    song-hint: "<dark_gray>可以播放，或收藏到「我的喜欢」。</dark_gray>"
+    empty: "<gray>请先在输入框里填写要搜索的内容。</gray>"
+    hint: "<dark_gray>点击任意一条直接播放。</dark_gray>"
+  library:
+    title: "我的音乐"
+    hint: "<dark_gray>点目录查看内容；新建的目录随时可以删除。</dark_gray>"
+    line: "<white><name></white> <dark_gray>(<count> 首)</dark_gray>"
+    open-tip: "打开目录"
+    create-name: "新目录名字"
+    create: "创建目录"
+    create-tip: "创建后可在「我的音乐」里看到"
+  catalogue:
+    title: "目录 · <name>"
+    hint: "<dark_gray>共 <count> 首，按顺序播放。</dark_gray>"
+    line: "<gray><index>. </gray><white><title></white>"
+    play-all: "播放整个目录"
+    play-all-tip: "按顺序加入队列"
+    song-tip: "点击查看这首歌"
+    song-title: "收藏歌曲"
+    song-line: "<white><title></white>"
+    song-hint: "<dark_gray>可以播放，或从收藏中删除。</dark_gray>"
+    delete: "删除目录"
+    delete-tip: "永久删除这个目录（「我的喜欢」不可删）"
+  queue:
+    title: "播放队列"
+    current: "<gray>正在播放：</gray><white><title></white>"
+    empty: "<gray>队列是空的。</gray>"
+    line: "<gray><index>. </gray><white><title></white> <dark_gray>[<duration>]</dark_gray>"
+    cleared: "<green>已清空等待队列（<count> 首）。</green>"
+  volume:
+    title: "音量"
+    hint: "<dark_gray>拖动滑块后点「应用音量」；音量对本语音组所有人生效。</dark_gray>"
+  settings:
+    title: "设置"
+    hint: "<dark_gray>低音 / 语言 / 音源 / 隐藏开关，调好后点「应用设置」；音量在单独的「音量」页。</dark_gray>"
+  advanced:
+    title: "高级"
+    hint: "<dark_gray>不常用的操作，部分需要管理员权限。</dark_gray>"
+  now-playing:
+    title: "正在播放"
+  kill:
+    title: "重置播放器"
+    body: "<red>确定要强制重启本组的播放器吗？</red>"
+    confirm: "确定"
+    cancel: "取消"
+  unsupported: "<red>当前服务器不支持 Dialog（需要 Paper 1.21.7+）。</red>"
+  disabled: "<red>图形菜单已被服主关闭（config.yml 的 menu.enabled）。</red>"
+netease:
+  disabled: "<red>网易云音源已在配置中关闭（netease.enabled）。</red>"
+  no-results: "<red>网易云没有找到相关歌曲。</red>"
+  error: "<red>网易云接口请求失败：<reason></red>"
+  vip-required: "<red>这首歌需要网易云会员或没有可用音源。</red> <gray>请管理员先执行 </gray><white>/music login 网易云</white><gray> 登录会员账号。</gray>"
+  playlist-queued: "<green>已从歌单加入 </green><white><count></white><green> 首歌曲。</green>"
+  search-usage: '<red>用法：</red><white>/music search netease:\<关键词></white>'
+  vip-badge: "<gold>[VIP]</gold>"
+
+lyrics:
+  line: "<text>"
+
+# 每个玩家自己的默认搜索/播放音源
+source:
+  bilibili: "B 站"
+  netease: "网易云"
+  youtube: "YouTube"
+  soundcloud: "SoundCloud"
+  all: "全部音源"
+  current: "<gray>你当前的默认音源：</gray><white><source></white>"
+  available: '<gray>可用：</gray><white>bilibili</white><gray> / </gray><white>netease</white><gray> / </gray><white>youtube</white><gray> / </gray><white>soundcloud</white> <dark_gray>（/music source \<id> 切换）</dark_gray>'
+  set: "<green>默认音源已切换为 </green><white><source></white><gray>，之后 /music play、/music search 都用它。</gray>"
+  reset: "<green>已恢复服务器默认音源：</green><white><source></white>"
+  unknown: "<red>未知音源：</red><white><input></white><gray>。可选 bilibili / netease / youtube / soundcloud。</gray>"
+
+# ── 账号登录（所有平台同一套流程）──────────────────────────────
+platform:
+  netease: "网易云"
+  bilibili: "B 站"
+
+login:
+  usage: '<red>用法：</red><white>/music login \<netease|bilibili> [status|logout|cookie \<值>]</white>'
+  unknown-platform: "<red>未知平台：</red><white><input></white><gray>。可选 netease / bilibili。</gray>"
+  status-line: "<gray><platform>：</gray><green><nickname></green>"
+  status-line-none: "<gray><platform>：</gray><red>未登录</red>"
+  logout-all: "<green>已清除所有账号凭证。</green>"
+  logout-done: "<green>已退出 <platform> 并删除凭证。</green>"
+  starting: "<gray>正在为 <platform> 生成登录二维码…</gray>"
+  scan: "<green>二维码已发放！</green><gray>拿在手上（或放进物品展示框），用 <platform> 扫码，然后在手机上确认。</gray>"
+  scanned: "<yellow>已扫码，请在手机上确认登录。</yellow>"
+  waiting: "<gray>仍在等待扫码…二维码 3 分钟内有效。</gray>"
+  expired: "<red>二维码已过期，请重新执行 /music login。</red>"
+  timeout: "<red>登录超时，请重新执行 /music login。</red>"
+  ok: "<green><platform> 登录成功：</green><white><nickname></white><gray>。凭证已保存，所有玩家共用。</gray>"
+  failed: "<red><platform> 登录失败：</red><gray><reason></gray>"
+  risk: "<red><platform> 返回风控/异常：</red><gray><detail></gray>"
+  in-progress: "<yellow>已经有一个登录流程在进行，请先完成或等它超时。</yellow>"
+  already-logged-in: "<yellow>当前已登录 <platform>（<nickname>），继续扫码会覆盖凭证。</yellow>"
+  cookie-usage: '<red>用法：</red><white>/music login <platform> cookie \<Cookie></white><gray>（从浏览器 Cookie 里复制整段）</gray>'
+  cookie-checking: "<gray>正在验证 Cookie…</gray>"
+  cookie-invalid: "<red>Cookie 无效或已过期（没有拿到账号信息），请重新复制。</red>"
+  cookie-ok: "<green><platform> Cookie 登录成功：</green><white><nickname></white><gray>。</gray>"
+
+# ── 循环播放 ────────────────────────────────────────────────────
+loop:
+  "off": "顺序播放"
+  one: "单曲循环"
+  all: "列表循环"
+  current: "<gray>当前循环模式：</gray><white><mode></white>"
+  set: "<gray><player> 把循环模式设为 </gray><white><mode></white>"
+  usage: '<red>用法：</red><white>/music loop \<off|one|all></white>'
+
+catalogue:
+  favorites: "我的喜欢"
+  play-label: "<green>[播放]</green>"
+  play-hover: "<gray>播放这首歌</gray>"
+  delete-label: "<red>[删除]</red>"
+  delete-hover: "<gray>从歌单移除</gray>"
+  header: "<gray>你的收藏目录（<count> 个）：</gray>"
+  line: "<gray>· </gray><white><name></white> <dark_gray>(<count> 首)</dark_gray>"
+  usage: '<red>用法：</red><white>/music catalogue \<list|create|delete|play|add|remove></white>'
+  created: "<green>已创建目录：</green><white><name></white>"
+  create-failed: "<red>创建失败（名字为空、重复或过长）：</red><white><name></white>"
+  deleted: "<green>已删除目录：</green><white><name></white>"
+  cannot-delete: "<red>「我的喜欢」是默认目录，不能删除。</red>"
+  unknown-name: "<red>找不到目录：</red><white><name></white>"
+  empty: "<gray>目录 <white><name></white> 还是空的。</gray>"
+  playing: "<gray>开始播放目录 </gray><white><name></white><gray>（<count> 首）…</gray>"
+  played: "<green>已把 </green><white><count></white><green> 首加入队列（目录 <name>）。</green>"
+  added: "<green>已加入 </green><white><name></white><green>：</green><white><title></white>"
+  duplicate: "<gray>已经在目录里了：</gray><white><title></white>"
+  removed: "<green>已从 </green><white><name></white><green> 移除。</green>"
+  remove-failed: "<red>移除失败：目录或序号不存在。</red>"
+  entries-header: "<gray>目录 <white><name></white>（<count> 首）：</gray>"
+  entry-line: "<gray><index>. </gray><white><title></white>"
+
+collect:
+  no-track: "<gray>当前没有播放中的歌曲。</gray>"
+  usage: '<red>用法：</red><white>/music collect \<标识> [标题]</white><gray> 或 </gray><white>/music like</white>'
+  choose: "<gray>要把 </gray><white><title></white><gray> 收藏到哪个歌单？</gray>"
+  choose-hint: "<dark_gray>点击上面的歌单即可收藏。</dark_gray>"
+  target: "<gray><index>. </gray><white><name></white> <dark_gray>(<count> 首)</dark_gray>"
+  target-hover: "<gray>收藏到这个歌单</gray>"

@@ -1,43 +1,48 @@
 package dev.klash.simpleVoiceChatMusic.commands;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
-import dev.klash.simpleVoiceChatMusic.SimpleVoiceChatMusic;
 import dev.klash.simpleVoiceChatMusic.audio.GroupManager;
 import dev.klash.simpleVoiceChatMusic.audio.GroupSettingsManager;
 import dev.klash.simpleVoiceChatMusic.audio.MusicManager;
+import dev.klash.simpleVoiceChatMusic.i18n.Messages;
+import dev.klash.simpleVoiceChatMusic.i18n.Ph;
 import dev.klash.simpleVoiceChatMusic.util.ModUtils;
-import dev.klash.simpleVoiceChatMusic.util.Text;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import static dev.klash.simpleVoiceChatMusic.util.ModUtils.checkPlayerGroup;
 
 public class NowPlayingCommand implements Command {
-    public int execute(Player context, String[] args) throws Exception {
+
+    @Override
+    public int execute(Player context, String[] args) {
         ModUtils.CheckPlayerGroup result = checkPlayerGroup(context);
-        if (result == null) return 1;
+        if (result == null) {
+            return 1;
+        }
 
-        Bukkit.getScheduler().runTask(SimpleVoiceChatMusic.get(), () -> {
-            GroupManager gm = MusicManager.getInstance().getGroup(result.group(), result.source().getServer());
-            AudioTrack track = gm.getPlayer().getPlayingTrack();
-            GroupSettingsManager settings = gm.getSettingsStore();
+        GroupManager gm = MusicManager.getInstance().getGroup(result.group(), result.source().getServer());
+        AudioTrack track = gm.getPlayer().getPlayingTrack();
+        GroupSettingsManager settings = gm.getSettingsStore();
 
-            if (track == null) {
-                result.source().sendMessage(() -> Text.literal("Nothing is playing."));
-                return;
-            }
+        if (track == null) {
+            Messages.send(result.source(), "now-playing.nothing");
+            return 0;
+        }
 
-            result.source().sendMessage(
-                () -> Text.literal("Currently Playing ")
-                    .append(ModUtils.trackInfo(track.getInfo()))
-                    .append(Text.literal("\n" + ModUtils.formatMMSS(track.getPosition()) + "/" + ModUtils.formatMMSS(track.getDuration())) )
-                    .append(Text.literal(" • " + settings.volume + "% volume"))
-                    .append(Text.literal(" • " + settings.bassboost + "% bassboost"))
-            );
-        });
+        Messages.send(result.source(), "now-playing.line",
+                Ph.comp("track", ModUtils.trackInfo(track.getInfo())),
+                Ph.raw("position", ModUtils.formatMMSS(track.getPosition())),
+                Ph.raw("duration", ModUtils.formatMMSS(track.getDuration())),
+                Ph.num("volume", settings.volume),
+                Ph.raw("bass", formatBass(settings.bassboost)));
 
         return 0;
     }
 
+    private static String formatBass(float bassboost) {
+        if (Math.abs(bassboost - Math.round(bassboost)) < 0.001f) {
+            return Integer.toString(Math.round(bassboost));
+        }
+        return String.format("%.1f", bassboost);
+    }
 }

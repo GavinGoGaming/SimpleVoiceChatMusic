@@ -1,0 +1,26 @@
+SimpleVoiceChatMusic (Paper port / fork)
+Copyright 2026 Gavin Fox, MrTron and contributors
+
+This project is licensed under the GNU General Public License v3.0 (GPL-3.0).
+See LICENSE for the full text.
+
+This product is a derivative work of "Simple Voice Chat Music" by Derock
+(https://github.com/ItzDerock/simplevoicechat-music), which is licensed under
+the Apache License, Version 2.0. The original Apache-2.0 notices are retained
+below as required by that license.
+
+Original work:
+  Simple Voice Chat Music
+  Copyright 2024 Derock <derock@derock.dev>
+  https://github.com/ItzDerock/simplevoicechat-music
+  Licensed under the Apache License, Version 2.0.
+
+Third-party components bundled in the release jar:
+  - lavaplayer (dev.arbjerg:lavaplayer) - Apache License 2.0
+  - lavaplayer youtube-source (dev.lavalink.youtube) - MIT License
+  - OkHttp (com.squareup.okhttp3) - Apache License 2.0
+  - Gson (com.google.code.gson) - Apache License 2.0
+  - ZXing core (com.google.zxing) - Apache License 2.0 (NetEase login QR code)
+
+Simple Voice Chat (https://github.com/henkelmax/simple-voice-chat) is only used
+at runtime through its public API and is not bundled.

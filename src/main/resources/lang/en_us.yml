@@ -1,0 +1,420 @@
+# =====================================================================================
+#  SimpleVoiceChatMusic - English (en_us)
+# =====================================================================================
+#  语法：MiniMessage  https://docs.advntr.dev/minimessage/format.html
+#  支持嵌套，最终会展开成 "general.usage" 这样的点分键。
+#  可用占位符见各条目注释；占位符由代码注入，请勿删除尖括号部分。
+#
+#  想新增一种语言：复制本文件为 lang/<语言代码>.yml（例如 ja_jp.yml / de_de.yml），
+#  翻译后重新打包即可，插件启动时会自动扫描 jar 内 lang/*.yml。
+# =====================================================================================
+
+general:
+  # 所有消息的前缀，config.yml 的 messages.use-prefix 可关闭
+  prefix: "<dark_gray>[</dark_gray><aqua>Music</aqua><dark_gray>]</dark_gray> "
+  no-permission: "<red>You don't have permission to do that.</red>"
+  player-only: "<red>Only players can use this command.</red>"
+  unknown-subcommand: "<red>Unknown subcommand.</red> <gray>Use <white>/music</white> to see the command list.</gray>"
+  cooldown: "<gray>Slow down a bit, try again in <white><seconds>s</white>.</gray>"
+  usage: |-
+    <gray>Available commands:</gray>
+    <white>/music play \<song title | Spotify link></white> <dark_gray>-</dark_gray> <gray>search and queue the first result</gray>
+    <white>/music search \<song></white> <dark_gray>-</dark_gray> <gray>pick from the first few results</gray>
+    <white>/music now-playing</white> <dark_gray>-</dark_gray> <gray>show the current song</gray>
+    <white>/music queue</white> <dark_gray>-</dark_gray> <gray>show the queue</gray>
+    <white>/music skip | pause | resume | stop</white> <dark_gray>-</dark_gray> <gray>playback control</gray>
+    <white>/music volume \<0-100> | bassboost \<0-200></white> <dark_gray>-</dark_gray> <gray>audio settings</gray>
+    <white>/music lang [code]</white> <dark_gray>-</dark_gray> <gray>change the message language</gray>
+    <white>/music menu</white> <dark_gray>-</dark_gray> <gray>open the dialog menu</gray>
+    <white>/music source \<bilibili | netease | youtube | soundcloud></white> <dark_gray>-</dark_gray> <gray>switch your default search source</gray>
+    <white>/music login \<netease|bilibili></white> <dark_gray>-</dark_gray> <gray>scan a QR code to log in (admin)</gray>
+    <white>/music kill</white> <dark_gray>-</dark_gray> <gray>force-restart the player of your group</gray>
+  error: "<red>Something went wrong while running that command, check the server console for details.</red>"
+
+voicechat:
+  not-ready: "<yellow>Voice chat is still starting up, please try again in a moment.</yellow>"
+  not-connected: "<red>You are not connected to voice chat.</red>"
+  no-group: "<red>You are not in a voice chat group.</red>"
+
+play:
+  all-selected: "<gray>All sources: playing the </gray><white><source></white><gray> result.</gray>"
+  usage: '<gray>Usage: <white>/music play \<song title | Spotify link></white></gray>'
+  loading: "<gray>Loading songs...</gray>"
+  # <player> = 执行命令的玩家, <track> = 曲目信息（带链接）
+  queued: "<gray><player> queued <track></gray>"
+  queue-full: "<red>The queue is full (or the player has left), that song was not queued.</red>"
+  no-matches: "<red>No matches found.</red>"
+  # <reason> = 加载失败原因
+  failed: "<red>Failed to load that track: <reason></red>"
+  failed-internal: "<red>That track failed to load, check the server console for details.</red>"
+  spotify-not-configured: "<yellow>Spotify is not configured (spotify.client-id / spotify.client-secret in config.yml). Trying a normal search instead.</yellow>"
+  spotify-failed: "<red>Could not look up that Spotify track: <reason></red>"
+  error-timeout: "<red>The music server did not respond in time.</red> <gray>Try again later or use another link.</gray>"
+  error-disconnected: "<red>The music server closed the connection mid-transfer (anti-leech protection, or a broken CDN slice).</red> <gray>Downloading the file and putting it into the music folder usually works.</gray>"
+  error-unreachable: "<red>Could not reach the music server.</red> <gray>Check the link and the server's network.</gray>"
+  error-tls: "<red>TLS handshake with the music server failed.</red> <gray>Try the http:// link instead of https://.</gray>"
+  error-server: "<red>The music server returned an error status.</red>"
+  error-forbidden: "<red>The music server refused the request (HTTP 401/403).</red> <gray>It probably requires a login or blocks hotlinking.</gray>"
+  error-not-found: "<red>That link does not exist (HTTP 404).</red>"
+  error-empty: "<red>The music server announced a file but sent no data (broken CDN slice or anti-leech).</red> <gray>Try another link.</gray>"
+  error-not-audio: "<red>That link is not an audio file.</red> <gray>It returned a web page or some other data.</gray>"
+  unsupported-platform: '<red><platform> links are not supported.</red> <gray>Search for the song instead: <white>/music play \<song title></white></gray>'
+
+search:
+  usage: '<gray>Usage: <white>/music search \<song></white></gray>'
+  loading: "<gray>Searching...</gray>"
+  header: "<gray>Found <count> result(s):</gray>"
+  bullet: "  <dark_gray>-</dark_gray> "
+  click-to-queue: "<green><bold>[Click to queue]</bold></green>"
+  # 鼠标悬停在可点击文字上时显示
+  click-hover: "<gray>Queue this song</gray>"
+  collect: "<green>[Save song]</green>"
+  collect-hover: "<gray>Save to My Likes</gray>"
+  all-loading: "<gray>Searching every source in parallel...</gray>"
+  all-empty: "<red>No results from any source.</red>"
+  all-header: "<gray>Found </gray><white><count></white><gray> results across all sources:</gray>"
+
+queue:
+  current: "<gray>Current:</gray> <track>"
+  entry: "<gray><index>.</gray> <track>"
+  empty: "<gray>The queue is empty.</gray>"
+
+now-playing:
+  nothing: "<gray>Nothing is playing.</gray>"
+  # <position>/<duration> 形如 1:23/3:45
+  line: "<gray>Now playing</gray> <track> <dark_gray>(<position>/<duration>)</dark_gray> <dark_gray>·</dark_gray> <white><volume>%</white> <gray>volume</gray> <dark_gray>·</dark_gray> <white><bass>%</white> <gray>bass boost</gray>"
+
+skip:
+  done: "<gray><player> skipped the current song.</gray>"
+
+pause:
+  done: "<gray><player> paused playback.</gray>"
+
+resume:
+  done: "<gray><player> resumed playback.</gray>"
+
+stop:
+  done: "<gray><player> stopped playback and cleared the queue.</gray>"
+
+volume:
+  usage: '<gray>Usage: <white>/music volume \<0-100></white></gray>'
+  invalid: "<red>Volume must be a whole number.</red>"
+  range: "<red>Volume must be between 0 and 100.</red>"
+  set: "<gray><player> set the volume to <white><volume>%</white>.</gray>"
+
+bassboost:
+  usage: '<gray>Usage: <white>/music bassboost \<0-200></white></gray>'
+  invalid: "<red>Bass boost must be a number.</red>"
+  range: "<red>Bass boost must be between 0 and 200.</red>"
+  set: "<gray><player> set the bass boost to <white><bass>%</white>.</gray>"
+
+kill:
+  warning: "<red><bold>Careful!</bold> This force-kills the player of your group. Group members may hear a short burst of noise as the audio packets stop abruptly.</red><newline><newline><gray>Run the command again to confirm.</gray>"
+  broadcast: "<red><player> force-killed the music player.</red>"
+
+track:
+  now-playing: "<gray>Now playing:</gray> <track>"
+  failed: "<red>Failed to play that song: <reason></red>"
+  internal-error: "<red>Failed to play that song due to an internal error.</red>"
+  stuck: "<yellow>The track got stuck, skipping it.</yellow>"
+
+playback:
+  queue-empty: "<gray>No more songs to play.</gray>"
+
+lang:
+  current: "<gray>Current language:</gray> <white><language></white>"
+  available: "<gray>Available languages:</gray> <white><languages></white>"
+  set: "<gray>Language set to <white><language></white>.</gray>"
+  reset: "<gray>Language reset to automatic (<white><language></white>).</gray>"
+  unknown: "<red>Unknown language <white><language></white>.</red> <gray>Available:</gray> <white><languages></white>"
+
+service:
+  already: "<gray>The voice chat service is already registered.</gray>"
+  attempted: "<gray>Registration attempted, check the console for details.</gray>"
+
+# Simple Voice Chat 客户端设置里显示的音量分类（纯文本，不要写标签）
+category:
+  name: "Music"
+  description: "The volume of streamed music."
+
+# BOSS 栏：<title> 是文件名（取不到文件名时用歌曲标题），
+# <position>/<duration> 形如 1:23/3:45。
+bossbar:
+  title: "<white><title></white> <dark_gray>[</dark_gray><gray><position></gray><dark_gray>/</dark_gray><gray><duration></gray><dark_gray>]</dark_gray>"
+  unknown-duration: "--:--"
+
+# Kugou Music
+
+bilibili:
+  no-results: "<red>Bilibili returned no videos.</red>"
+  invalid-link: "<red>That Bilibili link does not contain a BV id.</red>"
+  error: "<red>Bilibili API request failed: <reason></red>"
+  no-audio: "<red>That video has no playable audio stream (VIP-only or region locked).</red>"
+  fallback: "<gray>Bilibili found nothing, falling back to YouTube search.</gray>"
+# ── Tab completion tooltips ────────────────────────────────────────
+tabcomplete:
+  login: "NetEase QR login (admin)"
+  netease: "Search NetEase, e.g. netease:song name"
+  source: "Switch your default search/play source"
+  source-bilibili: "Bilibili search"
+  source-netease: "NetEase search (login required)"
+  source-youtube: "YouTube search"
+  source-soundcloud: "SoundCloud search"
+  collect: "Save the current song to My Likes"
+  like: "Same as /music collect (save current song)"
+  catalogue: "Manage your saved catalogues"
+  catalogue-list: "List catalogue contents"
+  catalogue-create: "Create a catalogue"
+  catalogue-delete: "Delete a catalogue"
+  catalogue-play: "Play a whole catalogue in order"
+  catalogue-add: "Add the current song to a catalogue"
+  catalogue-remove: "Remove a track by index"
+  loop: "Set loop mode"
+  loop-off: "Disable looping"
+  loop-one: "Repeat one track"
+  loop-all: "Repeat the queue"
+  source-all: "Search every source at once"
+  source-reset: "Restore the server default source"
+  menu: "Open the dialog menu"
+  play: "Play a link (URL / Bilibili) or search a song name - unchanged behaviour"
+  search: "Search Bilibili videos, click a result to queue it"
+  now-playing: "Show the currently playing track"
+  queue: "Show the queue"
+  skip: "Skip to the next track"
+  pause: "Pause playback"
+  resume: "Resume playback"
+  stop: "Stop playback and clear the queue"
+  volume: "Set the volume (0-100)"
+  bassboost: "Set bass boost (0-200)"
+  lang: "Switch the message language"
+  kill: "Force-restart this group's player (when it is stuck)"
+  url: "Paste a full link: Bilibili video / bangumi / direct audio"
+  bilibili: "Bilibili video id, e.g. bilibili://BV1xx411c7mD"
+  ytsearch: "Force a YouTube search, e.g. ytsearch:song name"
+  scsearch: "Force a SoundCloud search, e.g. scsearch:song name"
+  lang-value: "Pick a language code, or auto to follow the client"
+  volume-value: "Enter a number between 0 and 100"
+  bassboost-value: "Enter a number between 0 and 200"
+
+# ── dialog menu (1.21.7+) ─────────────────────────────────────────
+menu:
+  collect:
+    title: "Save song"
+    hint: "<dark_gray>Save <white><title></white> to which catalogue?</dark_gray>"
+    line: "<white><name></white> <dark_gray>(<count> tracks)</dark_gray>"
+  title: "Music Player"
+  body:
+    status: "<gray>Queue <white><count></white> · Volume <white><volume></white> · Bass <white><bass></white> · Loop <white><loop></white></gray>"
+    now-playing: "<white><title></white>"
+    idle: "<gray>Nothing is playing.</gray>"
+    no-group: "<red>You are not in a voice chat group. Join one first (e.g. \"音乐\").</red>"
+    queue-preview: "<gray>Up next: </gray><white><tracks></white>"
+    hint: "<dark_gray>Type a link or song name and press Play; Search uses your current source (<source>).</dark_gray>"
+  input:
+    query: "Link / song name"
+    volume: "Volume"
+    bassboost: "Bass boost"
+    language: "Language"
+    source: "Default source"
+    loop: "Loop mode"
+    hide-lyrics: "Hide lyrics (action bar)"
+    hide-progress: "Hide progress bar (boss bar)"
+  language:
+    auto: "auto (follow client)"
+  button:
+    play: "Play"
+    play-tip: "Play the link or song name above (using your default source)"
+    search: "Search"
+    search-tip: "Search your default source; click a result to play it"
+    pause: "Pause"
+    pause-tip: "Pause playback"
+    resume: "Resume"
+    resume-tip: "Resume playback"
+    skip: "Next"
+    skip-tip: "Skip the current track"
+    stop: "Stop"
+    stop-tip: "Stop playback and clear the queue"
+    queue: "Queue"
+    queue-tip: "Show / clear the queue"
+    volume: "Volume"
+    volume-tip: "Adjust the group volume on its own page"
+    library: "My music"
+    library-tip: "Saved catalogues / My Likes"
+    play-song: "Play"
+    play-song-tip: "Play this song"
+    collect: "Save"
+    collect-tip: "Save to My Likes"
+    remove-song: "Remove from catalogue"
+    remove-song-tip: "Remove this song from the current catalogue"
+    settings: "Settings"
+    settings-tip: "Bass / language / default source / hidden toggles"
+    advanced: "Advanced"
+    advanced-tip: "Account login, restart player, register voice service"
+    now-playing: "Now playing"
+    now-playing-tip: "Show the current track and progress"
+    apply-volume: "Apply volume"
+    apply-volume-tip: "Apply the volume above to this group"
+    apply-settings: "Apply settings"
+    apply-settings-tip: "Save volume, bass, language and default source"
+    clear-queue: "Clear queue"
+    clear-queue-tip: "Clear the waiting queue (the current track keeps playing)"
+    login-netease: "NetEase login"
+    login-netease-tip: "Log in to NetEase with a QR code (admin)"
+    login-bilibili: "Bilibili login"
+    login-bilibili-tip: "Log in to Bilibili with a QR code (admin)"
+    logout: "Log out"
+    logout-tip: "Delete every saved account credential (admin)"
+    kill: "Restart player"
+    kill-tip: "Force-restart this group's player (when stuck)"
+    register-service: "Register service"
+    register-service-tip: "Manually register the Simple Voice Chat service (admin)"
+    back: "Back"
+    close: "Close"
+  results:
+    prev-page: "[Previous]"
+    next-page: "[Next]"
+    prev-tip: "Previous page"
+    next-tip: "Next page"
+    more: "<dark_gray><total> results; showing the first 14. Use </dark_gray><white>/music search</white><dark_gray> for more.</dark_gray>"
+    title: "Results · <source>"
+    song-title: "Song actions"
+    song-hint: "<dark_gray>Play it, or save it to My Likes.</dark_gray>"
+    empty: "<gray>Type something to search first.</gray>"
+    hint: "<dark_gray>Click a result to play it.</dark_gray>"
+  library:
+    title: "My music"
+    hint: "<dark_gray>Open a catalogue to see its songs; custom catalogues can be deleted.</dark_gray>"
+    line: "<white><name></white> <dark_gray>(<count> tracks)</dark_gray>"
+    open-tip: "Open catalogue"
+    create-name: "New catalogue name"
+    create: "Create catalogue"
+    create-tip: "It will appear under My music"
+  catalogue:
+    title: "Catalogue · <name>"
+    hint: "<dark_gray><count> tracks, played in order.</dark_gray>"
+    line: "<gray><index>. </gray><white><title></white>"
+    play-all: "Play catalogue"
+    play-all-tip: "Queue every track in order"
+    song-tip: "Open this song"
+    song-title: "Saved song"
+    song-line: "<white><title></white>"
+    song-hint: "<dark_gray>Play it, or remove it from the catalogue.</dark_gray>"
+    delete: "Delete catalogue"
+    delete-tip: "Permanently delete this catalogue (My Likes cannot be deleted)"
+  queue:
+    title: "Queue"
+    current: "<gray>Now playing: </gray><white><title></white>"
+    empty: "<gray>The queue is empty.</gray>"
+    line: "<gray><index>. </gray><white><title></white> <dark_gray>[<duration>]</dark_gray>"
+    cleared: "<green>Cleared <count> queued track(s).</green>"
+  volume:
+    title: "Volume"
+    hint: "<dark_gray>Drag the slider and press Apply volume; it affects everyone in this voice group.</dark_gray>"
+  settings:
+    title: "Settings"
+    hint: "<dark_gray>Bass / language / source / toggles; volume has its own page.</dark_gray>"
+  advanced:
+    title: "Advanced"
+    hint: "<dark_gray>Less common actions, some require admin permissions.</dark_gray>"
+  now-playing:
+    title: "Now playing"
+  kill:
+    title: "Restart player"
+    body: "<red>Force-restart this group's player?</red>"
+    confirm: "Confirm"
+    cancel: "Cancel"
+  unsupported: "<red>This server does not support dialogs (Paper 1.21.7+ required).</red>"
+  disabled: "<red>The dialog menu is disabled (menu.enabled in config.yml).</red>"
+netease:
+  disabled: "<red>The NetEase source is disabled (netease.enabled).</red>"
+  no-results: "<red>NetEase returned no songs.</red>"
+  error: "<red>NetEase API request failed: <reason></red>"
+  vip-required: "<red>That song needs NetEase VIP or has no playable source.</red> <gray>Ask an admin to run </gray><white>/music login netease</white><gray> with a VIP account.</gray>"
+  playlist-queued: "<green>Queued </green><white><count></white><green> songs from the playlist.</green>"
+  search-usage: '<red>Usage: </red><white>/music search netease:\<keyword></white>'
+  vip-badge: "<gold>[VIP]</gold>"
+
+lyrics:
+  line: "<text>"
+
+# Per-player default search/play source
+source:
+  bilibili: "Bilibili"
+  netease: "NetEase"
+  youtube: "YouTube"
+  soundcloud: "SoundCloud"
+  all: "All sources"
+  current: "<gray>Your default source: </gray><white><source></white>"
+  available: '<gray>Available: </gray><white>bilibili</white><gray> / </gray><white>netease</white><gray> / </gray><white>youtube</white><gray> / </gray><white>soundcloud</white> <dark_gray>(/music source \<id>)</dark_gray>'
+  set: "<green>Default source set to </green><white><source></white><gray>; /music play and /music search will use it.</gray>"
+  reset: "<green>Restored the server default source: </green><white><source></white>"
+  unknown: "<red>Unknown source: </red><white><input></white><gray>. Use bilibili / netease / youtube / soundcloud.</gray>"
+
+# ── Account login (same flow for every platform) ──────────────
+platform:
+  netease: "NetEase"
+  bilibili: "Bilibili"
+
+login:
+  usage: '<red>Usage: </red><white>/music login \<netease|bilibili> [status|logout|cookie \<value>]</white>'
+  unknown-platform: "<red>Unknown platform: </red><white><input></white><gray>. Use netease or bilibili.</gray>"
+  status-line: "<gray><platform>: </gray><green><nickname></green>"
+  status-line-none: "<gray><platform>: </gray><red>not logged in</red>"
+  logout-all: "<green>All saved credentials were removed.</green>"
+  logout-done: "<green>Logged out of <platform> and deleted its credentials.</green>"
+  starting: "<gray>Creating a login QR code for <platform>...</gray>"
+  scan: "<green>QR map given!</green> <gray>Hold it (or put it in an item frame), scan it with <platform>, then confirm on your phone.</gray>"
+  scanned: "<yellow>Scanned. Confirm the login on your phone.</yellow>"
+  waiting: "<gray>Still waiting for the scan... the QR code is valid for 3 minutes.</gray>"
+  expired: "<red>The QR code expired. Run /music login again.</red>"
+  timeout: "<red>Login timed out. Run /music login again.</red>"
+  ok: "<green><platform> login succeeded as </green><white><nickname></white><gray>. Credentials saved and shared by every player.</gray>"
+  failed: "<red><platform> login failed: </red><gray><reason></gray>"
+  risk: "<red><platform> returned a risk-control/error response: </red><gray><detail></gray>"
+  in-progress: "<yellow>A login flow is already running; finish it or wait for it to time out.</yellow>"
+  already-logged-in: "<yellow>Already logged in to <platform> as <nickname>; scanning again will replace it.</yellow>"
+  cookie-usage: '<red>Usage: </red><white>/music login <platform> cookie \<cookie></white> <gray>(copy the whole cookie from your browser)</gray>'
+  cookie-checking: "<gray>Checking the cookie...</gray>"
+  cookie-invalid: "<red>The cookie is invalid or expired (no account info). Copy it again.</red>"
+  cookie-ok: "<green><platform> cookie login succeeded as </green><white><nickname></white><gray>.</gray>"
+
+# ── Loop playback ──────────────────────────────────────────────
+loop:
+  "off": "Sequential"
+  one: "Repeat one"
+  all: "Repeat queue"
+  current: "<gray>Loop mode: </gray><white><mode></white>"
+  set: "<gray><player> set the loop mode to </gray><white><mode></white>"
+  usage: '<red>Usage: </red><white>/music loop \<off|one|all></white>'
+
+catalogue:
+  favorites: "My Likes"
+  play-label: "<green>[Play]</green>"
+  play-hover: "<gray>Play this song</gray>"
+  delete-label: "<red>[Remove]</red>"
+  delete-hover: "<gray>Remove from catalogue</gray>"
+  header: "<gray>Your catalogues (<count>):</gray>"
+  line: "<gray>- </gray><white><name></white> <dark_gray>(<count> tracks)</dark_gray>"
+  usage: '<red>Usage: </red><white>/music catalogue \<list|create|delete|play|add|remove></white>'
+  created: "<green>Catalogue created: </green><white><name></white>"
+  create-failed: "<red>Could not create (empty, duplicate or too long): </red><white><name></white>"
+  deleted: "<green>Catalogue deleted: </green><white><name></white>"
+  cannot-delete: "<red>\"My Likes\" is the default catalogue and cannot be deleted.</red>"
+  unknown-name: "<red>Catalogue not found: </red><white><name></white>"
+  empty: "<gray>Catalogue <white><name></white> is empty.</gray>"
+  playing: "<gray>Playing catalogue </gray><white><name></white><gray> (<count> tracks)...</gray>"
+  played: "<green>Queued </green><white><count></white><green> tracks from <name>.</green>"
+  added: "<green>Added to </green><white><name></white><green>: </green><white><title></white>"
+  duplicate: "<gray>Already in the catalogue: </gray><white><title></white>"
+  removed: "<green>Removed from </green><white><name></white><green>.</green>"
+  remove-failed: "<red>Remove failed: catalogue or index not found.</red>"
+  entries-header: "<gray>Catalogue <white><name></white> (<count> tracks):</gray>"
+  entry-line: "<gray><index>. </gray><white><title></white>"
+
+collect:
+  no-track: "<gray>Nothing is playing right now.</gray>"
+  usage: '<red>Usage: </red><white>/music collect \<id> [title]</white><gray> or </gray><white>/music like</white>'
+  choose: "<gray>Save </gray><white><title></white><gray> to which catalogue?</gray>"
+  choose-hint: "<dark_gray>Click a catalogue above to save it.</dark_gray>"
+  target: "<gray><index>. </gray><white><name></white> <dark_gray>(<count> tracks)</dark_gray>"
+  target-hover: "<gray>Save to this catalogue</gray>"

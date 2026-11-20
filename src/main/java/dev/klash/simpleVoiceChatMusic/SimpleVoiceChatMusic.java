@@ -2,123 +2,331 @@ package dev.klash.simpleVoiceChatMusic;
 
 import de.maxhenkel.voicechat.api.BukkitVoicechatService;
 import dev.klash.simpleVoiceChatMusic.audio.MusicManager;
-import dev.klash.simpleVoiceChatMusic.commands.*;
+import dev.klash.simpleVoiceChatMusic.audio.SpotifyHandler;
+import dev.klash.simpleVoiceChatMusic.commands.BassboostCommand;
+import dev.klash.simpleVoiceChatMusic.commands.KillCommand;
+import dev.klash.simpleVoiceChatMusic.commands.LangCommand;
+import dev.klash.simpleVoiceChatMusic.commands.MenuCommand;
+import dev.klash.simpleVoiceChatMusic.commands.LoginCommand;
+import dev.klash.simpleVoiceChatMusic.commands.CatalogueCommand;
+import dev.klash.simpleVoiceChatMusic.commands.CollectCommand;
+import dev.klash.simpleVoiceChatMusic.commands.LoopCommand;
+import dev.klash.simpleVoiceChatMusic.commands.SourceCommand;
+import dev.klash.simpleVoiceChatMusic.commands.NowPlayingCommand;
+import dev.klash.simpleVoiceChatMusic.commands.PauseCommand;
+import dev.klash.simpleVoiceChatMusic.commands.PlayCommand;
+import dev.klash.simpleVoiceChatMusic.commands.QueueCommand;
+import dev.klash.simpleVoiceChatMusic.commands.ResumeCommand;
+import dev.klash.simpleVoiceChatMusic.commands.SearchCommand;
+import dev.klash.simpleVoiceChatMusic.commands.SkipCommand;
+import dev.klash.simpleVoiceChatMusic.commands.StopCommand;
+import dev.klash.simpleVoiceChatMusic.commands.VolumeCommand;
+import dev.klash.simpleVoiceChatMusic.config.PluginSettings;
+import dev.klash.simpleVoiceChatMusic.i18n.LanguageManager;
+import dev.klash.simpleVoiceChatMusic.i18n.Messages;
+import dev.klash.simpleVoiceChatMusic.ui.BossBarTask;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public final class SimpleVoiceChatMusic extends JavaPlugin {
+public final class SimpleVoiceChatMusic extends JavaPlugin implements TabCompleter {
+
+    public static final String PERMISSION_ADMIN = "simplevoicechatmusic.admin";
 
     public static Logger LOGGER;
+
+    /** SVC 是否已经调用过插件的 initialize() */
+    public static volatile boolean vcRegistered = false;
+
+    private final Map<String, dev.klash.simpleVoiceChatMusic.commands.Command> subCommands = new LinkedHashMap<>();
+
+    private PluginSettings settings;
+    private LanguageManager languages;
+    private VoiceChatPlugin voicechatPlugin;
+    private BossBarTask bossBarTask;
+    private dev.klash.simpleVoiceChatMusic.ui.LyricTask lyricTask;
+    private org.bukkit.scheduler.BukkitTask lyricTaskTask;
 
     public static SimpleVoiceChatMusic get() {
         return getPlugin(SimpleVoiceChatMusic.class);
     }
 
-    public static boolean vcRegistered = false;
-
-    VoiceChatPlugin plugin;
+    /**
+     * 插件实例；未加载时返回 null（避免在关服/重载阶段抛异常）。
+     */
+    @Nullable
+    public static SimpleVoiceChatMusic getOrNull() {
+        try {
+            return get();
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
 
     @Override
     public void onEnable() {
-        SimpleVoiceChatMusic.LOGGER = getLogger();
+        LOGGER = getLogger();
 
-        BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
-        if (service != null) {
-            LOGGER.info("VC Service was not null! Attempting register");
-            service.registerPlugin(plugin = new VoiceChatPlugin());
+        saveDefaultConfig();
+
+        this.settings = PluginSettings.load(getConfig());
+
+        this.languages = new LanguageManager(this);
+        this.languages.reload(this.settings.defaultLanguage(), this.settings.useClientLocale());
+        Messages.init(this.languages, this.settings.usePrefix());
+
+        // 网易云登录凭证（服主扫码后保存，所有玩家共用）
+        dev.klash.simpleVoiceChatMusic.audio.NetEaseLogin.load();
+        dev.klash.simpleVoiceChatMusic.audio.BilibiliLogin.load();
+        // 每个玩家自己的默认音源偏好
+        dev.klash.simpleVoiceChatMusic.config.PlayerPreferences.load();
+
+        SpotifyHandler.configure(
+                getConfig().getString("spotify.client-id", ""),
+                getConfig().getString("spotify.client-secret", "")
+        );
+
+        // 本地文件播放已移除：不再创建 plugins/SimpleVoiceChatMusic/music 目录。
+        // 旧版本留下的空目录顺手清掉（非空则保留，避免误删文件）。
+        removeLegacyMusicDirectory();
+
+        // 预热 LavaPlayer：把音源注册放在启动阶段，
+        // 避免第一次 BOSS 栏刷新（或第一条命令）时才在主线程初始化
+        MusicManager.getInstance();
+
+        // BOSS 栏刷新任务（全局，主线程）
+        this.bossBarTask = new BossBarTask();
+        if (this.settings.bossBarEnabled()) {
+            this.bossBarTask.start(this, this.settings.bossBarIntervalTicks());
         }
 
-        bassboost = new BassboostCommand();
-        kill = new KillCommand();
-        nowplaying = new NowPlayingCommand();
-        pause = new PauseCommand();
-        play = new PlayCommand();
-        queue = new QueueCommand();
-        resume = new ResumeCommand();
-        search = new SearchCommand();
-        skip = new SkipCommand();
-        stop = new StopCommand();
-        volume = new VolumeCommand();
+        // 网易云歌词（ActionBar，跟随播放进度）
+        this.lyricTask = new dev.klash.simpleVoiceChatMusic.ui.LyricTask();
+        if (this.settings.lyricsEnabled()) {
+            this.lyricTaskTask = Bukkit.getScheduler().runTaskTimer(this, this.lyricTask,
+                    20L, this.settings.lyricsUpdateIntervalTicks());
+        }
 
-        LOGGER.info("Loaded Simple Voice Chat Music!");
+        registerSubCommands();
+        registerTabCompletion();
+        registerVoicechatService();
+
+        if (this.settings.configVersion() <= 0) {
+            LOGGER.warning("config.yml has no config-version; it was generated by an older build. "
+                    + "Delete it to regenerate the 1.0 layout (existing values are still read).");
+        } else {
+            LOGGER.info("Config version: " + this.settings.configVersion());
+        }
+
+        LOGGER.info("Boss bar: enabled=" + this.settings.bossBarEnabled()
+                + ", color=" + this.settings.bossBarColor()
+                + ", overlay=" + this.settings.bossBarOverlay()
+                + ", update-interval=" + this.settings.bossBarIntervalTicks() + " ticks");
+
+        LOGGER.info("Loaded Simple Voice Chat Music! (languages: " + String.join(", ", this.languages.available())
+                + ", queue limit: " + this.settings.maxQueueSize() + ")");
     }
 
     @Override
     public void onDisable() {
         LOGGER.info("Cleaning up due to shutdown.");
-        MusicManager.getInstance().cleanup();
-        if(plugin != null) {
-            getServer().getServicesManager().unregister(plugin);
-            LOGGER.info("Unregistered VoiceChat service.");
+
+        if (this.bossBarTask != null) {
+            this.bossBarTask.stop();
+        }
+
+        if (this.lyricTaskTask != null) {
+            this.lyricTaskTask.cancel();
+        }
+
+        try {
+            MusicManager.getInstance().cleanup();
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Failed to clean up music players", e);
         }
     }
 
-    dev.klash.simpleVoiceChatMusic.commands.Command
-    bassboost, kill, nowplaying, pause, play, queue, resume, search, skip, stop, volume;
+    public PluginSettings settings() {
+        return this.settings;
+    }
+
+    public LanguageManager languages() {
+        return this.languages;
+    }
+
+    /**
+     * 删除旧版本留下的 {@code music} 目录（只在目录为空时删除）。
+     */
+    private void removeLegacyMusicDirectory() {
+        File legacy = new File(getDataFolder(), "music");
+
+        if (!legacy.isDirectory()) {
+            return;
+        }
+
+        String[] children = legacy.list();
+        if (children != null && children.length > 0) {
+            LOGGER.warning("Local file playback was removed, but " + legacy.getAbsolutePath()
+                    + " is not empty. Delete it manually if you no longer need those files.");
+            return;
+        }
+
+        if (legacy.delete()) {
+            LOGGER.info("Removed the unused music directory (" + legacy.getAbsolutePath() + ").");
+        }
+    }
+
+    private void registerSubCommands() {
+        subCommands.put("play", new PlayCommand());
+        subCommands.put("search", new SearchCommand());
+        subCommands.put("stop", new StopCommand());
+        subCommands.put("pause", new PauseCommand());
+        subCommands.put("resume", new ResumeCommand());
+        subCommands.put("skip", new SkipCommand());
+        subCommands.put("queue", new QueueCommand());
+        subCommands.put("playing", new NowPlayingCommand());
+        subCommands.put("now-playing", new NowPlayingCommand());
+        subCommands.put("volume", new VolumeCommand());
+        subCommands.put("bassboost", new BassboostCommand());
+        subCommands.put("kill", new KillCommand());
+        subCommands.put("lang", new LangCommand());
+        subCommands.put("menu", new MenuCommand());
+        subCommands.put("login", new LoginCommand());
+        subCommands.put("source", new SourceCommand());
+        subCommands.put("loop", new LoopCommand());
+        subCommands.put("collect", new CollectCommand());
+        subCommands.put("like", new CollectCommand());
+        subCommands.put("catalogue", new CatalogueCommand());
+        subCommands.put("playlist", new CatalogueCommand());
+        subCommands.put("gui", new MenuCommand());
+    }
+
+    /**
+     * Tab 补全：Bukkit 的 TabCompleter 负责所有端（含控制台），
+     * Paper 的 AsyncTabCompleteEvent 再给玩家加上悬停提示。
+     */
+    private void registerTabCompletion() {
+        PluginCommand command = getCommand("music");
+        if (command != null) {
+            command.setTabCompleter(this);
+        }
+
+        try {
+            Bukkit.getPluginManager().registerEvents(
+                    new dev.klash.simpleVoiceChatMusic.commands.TabCompleteListener(), this);
+        } catch (Throwable t) {
+            LOGGER.warning("Could not register tab completion tooltips: " + t.getMessage());
+        }
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        List<String> tokens = new ArrayList<>();
+
+        if (args.length == 0) {
+            tokens.add("");
+        } else {
+            tokens.addAll(Arrays.asList(args));
+        }
+
+        List<String> result = new ArrayList<>();
+        for (dev.klash.simpleVoiceChatMusic.commands.CommandSuggestions.Suggestion suggestion
+                : dev.klash.simpleVoiceChatMusic.commands.CommandSuggestions.suggest(sender, tokens)) {
+            result.add(suggestion.value());
+        }
+
+        return result;
+    }
+
+    /**
+     * 通过 Bukkit 的 ServicesManager 注册 SVC 插件。
+     * 有些服务器的加载顺序会让 onEnable 时还拿不到服务，所以保留 /music_register_service 手动补注册。
+     */
+    private void registerVoicechatService() {
+        BukkitVoicechatService service;
+        try {
+            service = getServer().getServicesManager().load(BukkitVoicechatService.class);
+        } catch (NoClassDefFoundError e) {
+            LOGGER.severe("Simple Voice Chat is not installed, disabling music playback.");
+            return;
+        }
+
+        if (service == null) {
+            LOGGER.warning("Simple Voice Chat service is not available yet. "
+                    + "Run /music_register_service later if music does not work.");
+            return;
+        }
+
+        this.voicechatPlugin = new VoiceChatPlugin();
+        service.registerPlugin(this.voicechatPlugin);
+        LOGGER.info("Registered the Simple Voice Chat music plugin.");
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if(label.equalsIgnoreCase("music_register_service")) {
-            if(vcRegistered) {
-                sender.sendMessage("VoiceChat service already registered!");
-            }else {
-                BukkitVoicechatService service = getServer().getServicesManager().load(BukkitVoicechatService.class);
-                if (service != null) {
-                    LOGGER.info("VC Service was not null!");
-                    service.registerPlugin(new VoiceChatPlugin());
-                    sender.sendMessage("VoiceChat service register attempted.");
-                }else {
-                    sender.sendMessage("VoiceChat service was null!");
-                }
+        try {
+            if (label.equalsIgnoreCase("music_register_service")) {
+                return handleServiceRegistration(sender);
             }
+
+            // /music 与 /svcmusic 都由 Bukkit 根据 plugin.yml 路由到这里
+            if (args.length == 0) {
+                Messages.send(sender, "general.usage");
+                return true;
+            }
+
+            if (!(sender instanceof Player player)) {
+                // 播放相关命令依赖"玩家所在的语音组"，控制台/命令方块无法使用
+                Messages.send(sender, "general.player-only");
+                return true;
+            }
+
+            dev.klash.simpleVoiceChatMusic.commands.Command sub =
+                    subCommands.get(args[0].toLowerCase(Locale.ROOT));
+
+            if (sub == null) {
+                Messages.send(sender, "general.unknown-subcommand");
+                return true;
+            }
+
+            String[] subArgs = Arrays.copyOfRange(args, 1, args.length);
+            sub.execute(player, subArgs);
+            return true;
+        } catch (Exception e) {
+            Messages.send(sender, "general.error");
+            LOGGER.log(Level.SEVERE, "Error while executing /" + label, e);
             return true;
         }
-        if(label.equalsIgnoreCase("music") || label.equalsIgnoreCase("svcmusic")) {
-            if(args.length == 0) {
-                sender.sendMessage("/music <play/stop/pause/bassboost/kill/playing/queue/resume/search/skip/volume>");
-                return true;
-            }else {
-                try {
-                    String[] argsWithoutCommand = new String[args.length - 1];
-                    System.arraycopy(args, 1, argsWithoutCommand, 0, argsWithoutCommand.length);
-                    switch(args[0]) {
-                        case "play":
-                            return play.execute((Player) sender, argsWithoutCommand) >= -1;
-                        case "stop":
-                            return stop.execute((Player) sender, argsWithoutCommand) >= -1;
-                        case "pause":
-                            return pause.execute((Player) sender, argsWithoutCommand) >= -1;
-                        case "bassboost":
-                            return bassboost.execute((Player) sender, argsWithoutCommand) >= -1;
-                        case "kill":
-                            return kill.execute((Player) sender, argsWithoutCommand) >= -1;
-                        case "playing":
-                            return nowplaying.execute((Player) sender, argsWithoutCommand) >= -1;
-                        case "queue":
-                            return queue.execute((Player) sender, argsWithoutCommand) >= -1;
-                        case "resume":
-                            return resume.execute((Player) sender, argsWithoutCommand) >= -1;
-                        case "search":
-                            return search.execute((Player) sender, argsWithoutCommand) >= -1;
-                        case "skip":
-                            return skip.execute((Player) sender, argsWithoutCommand) >= -1;
-                        case "volume":
-                            return volume.execute((Player) sender, argsWithoutCommand) >= -1;
-                        default:
-                            sender.sendMessage("/music <play/stop/pause/bassboost/kill/playing/queue/resume/search/skip/volume>");
-                            return true;
-                    }
-                }catch(Exception e) {
-                    sender.sendMessage("An error occurred while executing the command: " + e.getMessage() + " / " + e);
-                    e.printStackTrace();
-                    return true;
-                }
-            }
+    }
+
+    private boolean handleServiceRegistration(CommandSender sender) {
+        if (!sender.hasPermission(PERMISSION_ADMIN)) {
+            Messages.send(sender, "general.no-permission");
+            return true;
         }
-        return super.onCommand(sender, command, label, args);
+
+        if (vcRegistered) {
+            Messages.send(sender, "service.already");
+            return true;
+        }
+
+        registerVoicechatService();
+        Messages.send(sender, "service.attempted");
+        return true;
     }
 }
