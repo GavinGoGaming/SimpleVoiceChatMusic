@@ -7,96 +7,94 @@ import dev.klash.simpleVoiceChatMusic.audio.TrackMetadata;
 import dev.klash.simpleVoiceChatMusic.i18n.Messages;
 import dev.klash.simpleVoiceChatMusic.i18n.Ph;
 import dev.klash.simpleVoiceChatMusic.util.ModUtils;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.entity.Player;
 
+import java.util.List;
+import java.util.Map;
+
 /**
- * 收藏歌曲到「我的喜欢」。
+ * 收藏歌曲。
  *
  * <pre>
- * /music collect &lt;标识&gt; [标题]   收藏指定歌曲（搜索结果的「收藏歌曲」按钮用的就是它）
- * /music like                    收藏当前正在播放的歌曲
+ * /music collect &lt;标识&gt; [标题]   列出所有歌单，点击收藏到此
+ * /music like                    同上，用当前正在播放的歌曲
  * </pre>
  */
 public class CollectCommand implements Command {
 
     @Override
     public int execute(Player player, String[] args) {
+        String identifier;
+        String title;
+
         if (args.length == 0) {
-            return collectCurrent(player);
+            ModUtils.CheckPlayerGroup check = ModUtils.checkPlayerGroup(player);
+            if (check == null) {
+                return 1;
+            }
+
+            GroupManager group = MusicManager.getInstance().getGroup(check.group(), check.source().getServer());
+            var track = group.getPlayer().getPlayingTrack();
+
+            if (track == null) {
+                Messages.send(player, "collect.no-track");
+                return 1;
+            }
+
+            identifier = track.getIdentifier();
+
+            TrackMetadata.Meta meta = TrackMetadata.get(identifier);
+
+            if (meta == null) {
+                meta = TrackMetadata.get(track.getInfo().uri);
+            }
+
+            title = meta != null ? meta.title() : track.getInfo().title;
+        } else {
+            identifier = args[0].trim();
+            title = args.length > 1
+                    ? String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length)).trim()
+                    : identifier;
         }
 
-        String identifier = args[0].trim();
-
-        if (identifier.isEmpty()) {
+        if (identifier == null || identifier.isBlank()) {
             Messages.send(player, "collect.usage");
             return 1;
         }
-
-        String title = args.length > 1
-                ? String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length)).trim()
-                : "";
-
-        if (title.isEmpty()) {
-            title = identifier;
-        }
-
-        PlayerCatalogue.AddResult result = PlayerCatalogue.add(player.getUniqueId(),
-                PlayerCatalogue.FAVORITES,
-                new PlayerCatalogue.Entry(identifier, title, "", System.currentTimeMillis()));
-
-        return report(player, result, title);
-    }
-
-    private int collectCurrent(Player player) {
-        ModUtils.CheckPlayerGroup check = ModUtils.checkPlayerGroup(player);
-        if (check == null) {
-            return 1;
-        }
-
-        GroupManager group = MusicManager.getInstance().getGroup(check.group(), check.source().getServer());
-        var track = group.getPlayer().getPlayingTrack();
-
-        if (track == null) {
-            Messages.send(player, "collect.no-track");
-            return 1;
-        }
-
-        String identifier = track.getIdentifier();
-        TrackMetadata.Meta meta = TrackMetadata.get(identifier);
-
-        if (meta == null) {
-            meta = TrackMetadata.get(track.getInfo().uri);
-        }
-
-        String title = meta != null ? meta.title() : track.getInfo().title;
-        String author = meta != null ? meta.author() : track.getInfo().author;
 
         if (title == null || title.isBlank()) {
             title = identifier;
         }
 
-        PlayerCatalogue.AddResult result = PlayerCatalogue.add(player.getUniqueId(),
-                PlayerCatalogue.FAVORITES,
-                new PlayerCatalogue.Entry(identifier, title, author == null ? "" : author,
-                        System.currentTimeMillis()));
+        Map<String, List<PlayerCatalogue.Entry>> catalogues =
+                PlayerCatalogue.catalogues(player.getUniqueId());
 
-        return report(player, result, title);
-    }
+        Messages.send(player, "collect.choose", Ph.raw("title", title));
 
-    private int report(Player player, PlayerCatalogue.AddResult result, String title) {
-        return switch (result) {
-            case ADDED -> {
-                Messages.send(player, "collect.added", Ph.raw("title", title));
-                yield 0;
-            }
-            case DUPLICATE -> {
-                Messages.send(player, "collect.duplicate", Ph.raw("title", title));
-                yield 0;
-            }
-            case UNKNOWN_CATALOGUE -> {
-                Messages.send(player, "catalogue.unknown");
-                yield 1;
-            }
-        };
+        int index = 1;
+
+        for (Map.Entry<String, List<PlayerCatalogue.Entry>> entry : catalogues.entrySet()) {
+            String name = entry.getKey();
+            String display = PlayerCatalogue.isFavorites(name)
+                    ? Messages.plain(player, "catalogue.favorites")
+                    : name;
+
+            Component label = Messages.component(player, "collect.target",
+                            Ph.num("index", index++),
+                            Ph.raw("name", display),
+                            Ph.num("count", entry.getValue().size()))
+                    .clickEvent(ClickEvent.runCommand("/music catalogue add " + name
+                            + " " + identifier + " " + title))
+                    .hoverEvent(HoverEvent.showText(Messages.component(player, "collect.target-hover")));
+
+            player.sendMessage(label);
+        }
+
+        Messages.send(player, "collect.choose-hint");
+
+        return 0;
     }
 }

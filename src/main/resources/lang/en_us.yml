@@ -198,6 +198,10 @@ tabcomplete:
 
 # ── dialog menu (1.21.7+) ─────────────────────────────────────────
 menu:
+  collect:
+    title: "Save song"
+    hint: "<dark_gray>Save <white><title></white> to which catalogue?</dark_gray>"
+    line: "<white><name></white> <dark_gray>(<count> tracks)</dark_gray>"
   title: "Music Player"
   body:
     status: "<gray>Queue <white><count></white> · Volume <white><volume></white> · Bass <white><bass></white> · Loop <white><loop></white></gray>"
@@ -240,6 +244,8 @@ menu:
     play-song-tip: "Play this song"
     collect: "Save"
     collect-tip: "Save to My Likes"
+    remove-song: "Remove from catalogue"
+    remove-song-tip: "Remove this song from the current catalogue"
     settings: "Settings"
     settings-tip: "Bass / language / default source / hidden toggles"
     advanced: "Advanced"
@@ -284,6 +290,10 @@ menu:
     line: "<gray><index>. </gray><white><title></white>"
     play-all: "Play catalogue"
     play-all-tip: "Queue every track in order"
+    song-tip: "Open this song"
+    song-title: "Saved song"
+    song-line: "<white><title></white>"
+    song-hint: "<dark_gray>Play it, or remove it from the catalogue.</dark_gray>"
     delete: "Delete catalogue"
     delete-tip: "Permanently delete this catalogue (My Likes cannot be deleted)"
   queue:
@@ -374,6 +384,10 @@ loop:
 
 catalogue:
   favorites: "My Likes"
+  play-label: "<green>[Play]</green>"
+  play-hover: "<gray>Play this song</gray>"
+  delete-label: "<red>[Remove]</red>"
+  delete-hover: "<gray>Remove from catalogue</gray>"
   header: "<gray>Your catalogues (<count>):</gray>"
   line: "<gray>- </gray><white><name></white> <dark_gray>(<count> tracks)</dark_gray>"
   usage: '<red>Usage: </red><white>/music catalogue \<list|create|delete|play|add|remove></white>'
@@ -381,7 +395,6 @@ catalogue:
   create-failed: "<red>Could not create (empty, duplicate or too long): </red><white><name></white>"
   deleted: "<green>Catalogue deleted: </green><white><name></white>"
   cannot-delete: "<red>\"My Likes\" is the default catalogue and cannot be deleted.</red>"
-  unknown: "<red>Catalogue not found.</red>"
   unknown-name: "<red>Catalogue not found: </red><white><name></white>"
   empty: "<gray>Catalogue <white><name></white> is empty.</gray>"
   playing: "<gray>Playing catalogue </gray><white><name></white><gray> (<count> tracks)...</gray>"
@@ -393,9 +406,10 @@ catalogue:
   entries-header: "<gray>Catalogue <white><name></white> (<count> tracks):</gray>"
   entry-line: "<gray><index>. </gray><white><title></white>"
 
-
 collect:
-  added: "<green>Saved to My Likes: </green><white><title></white>"
-  duplicate: "<gray>Already saved: </gray><white><title></white>"
   no-track: "<gray>Nothing is playing right now.</gray>"
   usage: '<red>Usage: </red><white>/music collect \<id> [title]</white><gray> or </gray><white>/music like</white>'
+  choose: "<gray>Save </gray><white><title></white><gray> to which catalogue?</gray>"
+  choose-hint: "<dark_gray>Click a catalogue above to save it.</dark_gray>"
+  target: "<gray><index>. </gray><white><name></white> <dark_gray>(<count> tracks)</dark_gray>"
+  target-hover: "<gray>Save to this catalogue</gray>"

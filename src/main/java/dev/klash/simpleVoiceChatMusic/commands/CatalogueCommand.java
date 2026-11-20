@@ -104,7 +104,7 @@ public class CatalogueCommand implements Command {
             return 0;
         }
 
-        Messages.send(player, "catalogue.unknown-name", Ph.raw("name", input));
+        Messages.send(player, "catalogue.unknown-name", Ph.raw("name", args[1]));
         return 1;
     }
 
@@ -118,7 +118,7 @@ public class CatalogueCommand implements Command {
         String name = PlayerCatalogue.resolveName(player.getUniqueId(), input);
 
         if (!PlayerCatalogue.exists(player.getUniqueId(), name)) {
-            Messages.send(player, "catalogue.unknown-name", Ph.raw("name", input));
+            Messages.send(player, "catalogue.unknown-name", Ph.raw("name", args[1]));
             return 1;
         }
 
@@ -160,38 +160,50 @@ public class CatalogueCommand implements Command {
             return 1;
         }
 
-        String input = String.join(" ", java.util.Arrays.copyOfRange(args, 1, args.length));
-        String name = PlayerCatalogue.resolveName(player.getUniqueId(), input);
+        String name = PlayerCatalogue.resolveName(player.getUniqueId(), args[1]);
 
         if (!PlayerCatalogue.exists(player.getUniqueId(), name)) {
-            Messages.send(player, "catalogue.unknown-name", Ph.raw("name", input));
+            Messages.send(player, "catalogue.unknown-name", Ph.raw("name", args[1]));
             return 1;
         }
 
-        ModUtils.CheckPlayerGroup check = ModUtils.checkPlayerGroup(player);
-        if (check == null) {
-            return 1;
+        String identifier;
+        String title;
+        String author = "";
+
+        if (args.length >= 3) {
+            // 从聊天栏的「收藏到此」按钮进来：add <目录> <标识> <标题...>
+            identifier = args[2];
+            title = args.length > 3
+                    ? String.join(" ", java.util.Arrays.copyOfRange(args, 3, args.length))
+                    : identifier;
+        } else {
+            ModUtils.CheckPlayerGroup check = ModUtils.checkPlayerGroup(player);
+            if (check == null) {
+                return 1;
+            }
+
+            GroupManager group = MusicManager.getInstance().getGroup(check.group(), check.source().getServer());
+            var track = group.getPlayer().getPlayingTrack();
+
+            if (track == null) {
+                Messages.send(player, "collect.no-track");
+                return 1;
+            }
+
+            TrackMetadata.Meta meta = TrackMetadata.get(track.getIdentifier());
+
+            if (meta == null) {
+                meta = TrackMetadata.get(track.getInfo().uri);
+            }
+
+            identifier = track.getIdentifier();
+            title = meta != null ? meta.title() : track.getInfo().title;
+            author = meta != null ? meta.author() : track.getInfo().author;
         }
-
-        GroupManager group = MusicManager.getInstance().getGroup(check.group(), check.source().getServer());
-        var track = group.getPlayer().getPlayingTrack();
-
-        if (track == null) {
-            Messages.send(player, "collect.no-track");
-            return 1;
-        }
-
-        TrackMetadata.Meta meta = TrackMetadata.get(track.getIdentifier());
-
-        if (meta == null) {
-            meta = TrackMetadata.get(track.getInfo().uri);
-        }
-
-        String title = meta != null ? meta.title() : track.getInfo().title;
-        String author = meta != null ? meta.author() : track.getInfo().author;
 
         PlayerCatalogue.AddResult result = PlayerCatalogue.add(player.getUniqueId(), name,
-                new PlayerCatalogue.Entry(track.getIdentifier(), title,
+                new PlayerCatalogue.Entry(identifier, title,
                         author == null ? "" : author, System.currentTimeMillis()));
 
         return switch (result) {
@@ -205,7 +217,7 @@ public class CatalogueCommand implements Command {
                 yield 0;
             }
             case UNKNOWN_CATALOGUE -> {
-                Messages.send(player, "catalogue.unknown-name", Ph.raw("name", input));
+                Messages.send(player, "catalogue.unknown-name", Ph.raw("name", args[1]));
                 yield 1;
             }
         };
@@ -247,7 +259,7 @@ public class CatalogueCommand implements Command {
         String name = PlayerCatalogue.resolveName(player.getUniqueId(), input);
 
         if (!PlayerCatalogue.exists(player.getUniqueId(), name)) {
-            Messages.send(player, "catalogue.unknown-name", Ph.raw("name", input));
+            Messages.send(player, "catalogue.unknown-name", Ph.raw("name", args[1]));
             return 1;
         }
 
@@ -259,9 +271,23 @@ public class CatalogueCommand implements Command {
         int index = 1;
 
         for (PlayerCatalogue.Entry entry : entries) {
+            Component play = Messages.component(player, "catalogue.play-label")
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(
+                            "/music play " + entry.identifier()))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            Messages.component(player, "catalogue.play-hover")));
+
+            Component delete = Messages.component(player, "catalogue.delete-label")
+                    .clickEvent(net.kyori.adventure.text.event.ClickEvent.runCommand(
+                            "/music catalogue remove " + name + " " + index))
+                    .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(
+                            Messages.component(player, "catalogue.delete-hover")));
+
             Component line = Messages.component(player, "catalogue.entry-line",
                     Ph.num("index", index++),
-                    Ph.raw("title", entry.displayName()));
+                    Ph.raw("title", entry.displayName()))
+                    .append(Component.space()).append(play)
+                    .append(Component.space()).append(delete);
 
             player.sendMessage(line);
         }

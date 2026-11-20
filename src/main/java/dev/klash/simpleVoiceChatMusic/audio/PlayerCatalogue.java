@@ -265,7 +265,7 @@ public final class PlayerCatalogue {
             return "";
         }
 
-        String name = raw.trim();
+        String name = raw.trim().replaceAll("\\s+", "_");
 
         if (name.length() > 32) {
             name = name.substring(0, 32);

@@ -1,4 +1,4 @@
-# Simple Voice Chat Music —— Paper 语音聊天音乐插件 · 3.3.0
+# Simple Voice Chat Music —— Paper 语音聊天音乐插件 · 3.4.0
 
 > 本插件是 [Simple Voice Chat Music](https://modrinth.com/mod/simple-voice-chat-music)（ItzDerock 的 Fabric 模组）的 **Paper 移植版**。
 > 在语音聊天组里和好友一起听歌：B 站、网易云、YouTube、SoundCloud、直链音频都能点，支持图形菜单、滚动歌词和循环播放。
@@ -526,7 +526,7 @@ general:
 
 ```bash
 mvn clean package
-# -> target/SimpleVoiceChatMusic-3.3.0.jar
+# -> target/SimpleVoiceChatMusic-3.4.0.jar
 ```
 
 需要 JDK 25；产物为 shade 后的胖 jar（已打包 lavaplayer、youtube-source、OkHttp、Gson 等）。

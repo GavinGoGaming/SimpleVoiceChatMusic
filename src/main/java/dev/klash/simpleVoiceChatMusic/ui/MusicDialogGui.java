@@ -231,10 +231,8 @@ public final class MusicDialogGui {
                 click(view -> runCommand(player, entry.command()))));
 
         actions.add(button(player, "menu.button.collect", "menu.button.collect-tip",
-                click(view -> {
-                    runCommand(player, "music collect " + entry.identifier() + " " + entry.plainTitle());
-                    player.showDialog(buildMain(player));
-                })));
+                click(view -> player.showDialog(buildCollectTargets(player, entry.identifier(),
+                        entry.plainTitle())))));
 
         return dialog(player, Messages.component(player, "menu.results.song-title"),
                 List.of(body(entry.label()), body(Messages.component(player, "menu.results.song-hint"))),
@@ -289,6 +287,61 @@ public final class MusicDialogGui {
                 body, inputs, actions, 1, backButton(player));
     }
 
+    private static Dialog buildCollectTargets(Player player, String identifier, String title) {
+        Map<String, List<PlayerCatalogue.Entry>> catalogues =
+                PlayerCatalogue.catalogues(player.getUniqueId());
+
+        List<ActionButton> actions = new ArrayList<>();
+
+        for (Map.Entry<String, List<PlayerCatalogue.Entry>> entry : catalogues.entrySet()) {
+            String key = entry.getKey();
+            String name = PlayerCatalogue.isFavorites(key)
+                    ? Messages.plain(player, "catalogue.favorites")
+                    : key;
+
+            actions.add(ActionButton.builder(Messages.component(player, "menu.collect.line",
+                            Ph.raw("name", name), Ph.num("count", entry.getValue().size())))
+                    .width(WIDE_BUTTON_WIDTH)
+                    .action(click(view -> {
+                        runCommand(player, "music catalogue add " + key + " " + identifier + " " + title);
+                        player.showDialog(buildMain(player));
+                    }))
+                    .build());
+        }
+
+        return dialog(player, Messages.component(player, "menu.collect.title"),
+                List.of(body(Messages.component(player, "menu.collect.hint", Ph.raw("title", title)))),
+                List.of(), actions, 1, backButton(player));
+    }
+
+    private static Dialog buildCatalogueSong(Player player, String key, String catalogueName, int index) {
+        List<PlayerCatalogue.Entry> entries = PlayerCatalogue.entries(player.getUniqueId(), key);
+
+        if (index < 0 || index >= entries.size()) {
+            return buildCatalogue(player, key);
+        }
+
+        PlayerCatalogue.Entry entry = entries.get(index);
+
+        List<ActionButton> actions = new ArrayList<>();
+
+        actions.add(button(player, "menu.button.play-song", "menu.button.play-song-tip",
+                click(view -> runCommand(player, "music play " + entry.identifier()))));
+
+        actions.add(button(player, "menu.button.remove-song", "menu.button.remove-song-tip",
+                click(view -> {
+                    PlayerCatalogue.remove(player.getUniqueId(), key, index);
+                    Messages.send(player, "catalogue.removed", Ph.raw("name", catalogueName));
+                    player.showDialog(buildCatalogue(player, key));
+                })));
+
+        return dialog(player, Messages.component(player, "menu.catalogue.song-title"),
+                List.of(body(Messages.component(player, "menu.catalogue.song-line",
+                                Ph.raw("title", entry.displayName()))),
+                        body(Messages.component(player, "menu.catalogue.song-hint"))),
+                List.of(), actions, 1, backButton(player));
+    }
+
     private static Dialog buildCatalogue(Player player, String key) {
         List<PlayerCatalogue.Entry> entries = PlayerCatalogue.entries(player.getUniqueId(), key);
         String name = PlayerCatalogue.isFavorites(key)
@@ -298,6 +351,7 @@ public final class MusicDialogGui {
         List<DialogBody> body = new ArrayList<>();
         body.add(body(Messages.component(player, "menu.catalogue.hint", Ph.num("count", entries.size()))));
 
+        List<ActionButton> actions = new ArrayList<>();
         int index = 1;
 
         for (PlayerCatalogue.Entry entry : entries) {
@@ -305,11 +359,15 @@ public final class MusicDialogGui {
                 break;
             }
 
-            body.add(body(Messages.component(player, "menu.catalogue.line",
-                    Ph.num("index", index++), Ph.raw("title", entry.displayName()))));
+            final int songIndex = index - 1;
+            actions.add(ActionButton.builder(Messages.component(player, "menu.catalogue.line",
+                            Ph.num("index", index++), Ph.raw("title", entry.displayName())))
+                    .width(WIDE_BUTTON_WIDTH)
+                    .tooltip(Messages.component(player, "menu.catalogue.song-tip"))
+                    .action(click(view -> player.showDialog(
+                            buildCatalogueSong(player, key, name, songIndex))))
+                    .build());
         }
-
-        List<ActionButton> actions = new ArrayList<>();
 
         actions.add(button(player, "menu.catalogue.play-all", "menu.catalogue.play-all-tip",
                 click(view -> {
