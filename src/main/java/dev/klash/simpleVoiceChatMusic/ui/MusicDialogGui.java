@@ -160,10 +160,33 @@ public final class MusicDialogGui {
                                 identifierOf(hit.command()), hit.display()));
                     }
                 } else {
-                    for (BilibiliApi.Video video : BilibiliApi.searchWithRetry(query, limit)) {
-                        entries.add(new ResultEntry(resultLabel(player, video.displayName(),
-                                video.durationMs(), false),
-                                "music play " + video.identifier(), video.identifier(), video.displayName()));
+                    // B 站 page_size 上限 50：超过会返回空结果，必须分页抓取
+                    int fetched = 0;
+                    int pageNo = 1;
+
+                    while (fetched < limit) {
+                        int want = Math.min(20, limit - fetched);
+                        java.util.List<BilibiliApi.Video> pageVideos =
+                                BilibiliApi.searchWithRetry(query, want, pageNo);
+
+                        if (pageVideos.isEmpty()) {
+                            break;
+                        }
+
+                        for (BilibiliApi.Video video : pageVideos) {
+                            entries.add(new ResultEntry(resultLabel(player, video.displayName(),
+                                    video.durationMs(), false),
+                                    "music play " + video.identifier(), video.identifier(),
+                                    video.displayName()));
+                        }
+
+                        fetched += pageVideos.size();
+
+                        if (pageVideos.size() < want) {
+                            break;
+                        }
+
+                        pageNo++;
                     }
                 }
             } catch (Exception e) {
@@ -191,7 +214,7 @@ public final class MusicDialogGui {
                 }
 
                 try {
-                    player.showDialog(buildResults(player, source, finalEntries));
+                    player.showDialog(buildResults(player, source, finalEntries, 0));
                 } catch (Throwable t) {
                     // 结果页打不开时退回聊天栏列表，保证能选歌
                     SimpleVoiceChatMusic.LOGGER.warning("Could not open the search results dialog: "
@@ -205,39 +228,30 @@ public final class MusicDialogGui {
     private record ResultEntry(Component label, String command, String identifier, String plainTitle) {
     }
 
-    private static Dialog buildResults(Player player, PlayerPreferences.Source source, List<ResultEntry> entries) {
-        List<ActionButton> actions = new ArrayList<>();
+    private static final int RESULT_PAGE_SIZE = 12;
 
-        int shown = 0;
+    private static Dialog buildResults(Player player, PlayerPreferences.Source source,
+                                       List<ResultEntry> entries, int page) {
+        int from = Math.max(0, page * RESULT_PAGE_SIZE);
+        int to = Math.min(entries.size(), from + RESULT_PAGE_SIZE);
+
+        List<ActionButton> buttons = new ArrayList<>();
 
         for (ResultEntry entry : entries) {
-            // Dialog 的动作按钮过多会渲染失败（进而退化成聊天栏结果），这里限制一页按钮数
-            if (++shown > 14) {
-                break;
-            }
-
-            actions.add(ActionButton.builder(entry.label())
+            buttons.add(ActionButton.builder(entry.label())
                     .width(WIDE_BUTTON_WIDTH)
                     .action(click(view -> player.showDialog(buildResultActions(player, source, entry))))
                     .build());
         }
 
-        List<DialogBody> body = new ArrayList<>();
-        body.add(body(Messages.component(player, "menu.results.hint")));
-
-        if (entries.size() > 14) {
-            body.add(body(Messages.component(player, "menu.results.more",
-                    Ph.num("total", entries.size()))));
-        }
-
         return dialog(player,
                 Messages.component(player, "menu.results.title",
                         Ph.raw("source", Messages.plain(player, source.langKey()))),
-                body,
-                List.of(), actions, 1, backButton(player));
+                List.of(body(Messages.component(player, "menu.results.hint",
+                        Ph.num("page", page + 1),
+                        Ph.num("pages", Math.max(1, (entries.size() + RESULT_PAGE_SIZE - 1) / RESULT_PAGE_SIZE))))),
+                List.of(), buttons, 1, backButton(player));
     }
-
-    // -------------------------------------------------------------- library
 
     private static Dialog buildResultActions(Player player, PlayerPreferences.Source source, ResultEntry entry) {
         List<ActionButton> actions = new ArrayList<>();

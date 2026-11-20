@@ -268,6 +268,10 @@ menu:
     back: "返回"
     close: "关闭"
   results:
+    prev-page: "[上一页]"
+    next-page: "[下一页]"
+    prev-tip: "上一页搜索结果"
+    next-tip: "下一页搜索结果"
     more: "<dark_gray>共 <total> 条，这里显示前 14 条；用 </dark_gray><white>/music search</white><dark_gray> 查看更多。</dark_gray>"
     title: "搜索结果 · <source>"
     song-title: "歌曲操作"

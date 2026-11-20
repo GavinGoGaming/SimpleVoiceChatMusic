@@ -526,7 +526,7 @@ general:
 
 ```bash
 mvn clean package
-# -> target/SimpleVoiceChatMusic-3.4.0.jar
+# -> target/SimpleVoiceChatMusic-3.2.1.jar
 ```
 
 需要 JDK 25；产物为 shade 后的胖 jar（已打包 lavaplayer、youtube-source、OkHttp、Gson 等）。
