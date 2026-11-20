@@ -268,6 +268,7 @@ menu:
     back: "返回"
     close: "关闭"
   results:
+    more: "<dark_gray>共 <total> 条，这里显示前 14 条；用 </dark_gray><white>/music search</white><dark_gray> 查看更多。</dark_gray>"
     title: "搜索结果 · <source>"
     song-title: "歌曲操作"
     song-hint: "<dark_gray>可以播放，或收藏到「我的喜欢」。</dark_gray>"

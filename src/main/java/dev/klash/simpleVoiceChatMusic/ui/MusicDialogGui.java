@@ -208,17 +208,32 @@ public final class MusicDialogGui {
     private static Dialog buildResults(Player player, PlayerPreferences.Source source, List<ResultEntry> entries) {
         List<ActionButton> actions = new ArrayList<>();
 
+        int shown = 0;
+
         for (ResultEntry entry : entries) {
+            // Dialog 的动作按钮过多会渲染失败（进而退化成聊天栏结果），这里限制一页按钮数
+            if (++shown > 14) {
+                break;
+            }
+
             actions.add(ActionButton.builder(entry.label())
                     .width(WIDE_BUTTON_WIDTH)
                     .action(click(view -> player.showDialog(buildResultActions(player, source, entry))))
                     .build());
         }
 
+        List<DialogBody> body = new ArrayList<>();
+        body.add(body(Messages.component(player, "menu.results.hint")));
+
+        if (entries.size() > 14) {
+            body.add(body(Messages.component(player, "menu.results.more",
+                    Ph.num("total", entries.size()))));
+        }
+
         return dialog(player,
                 Messages.component(player, "menu.results.title",
                         Ph.raw("source", Messages.plain(player, source.langKey()))),
-                List.of(body(Messages.component(player, "menu.results.hint"))),
+                body,
                 List.of(), actions, 1, backButton(player));
     }
 

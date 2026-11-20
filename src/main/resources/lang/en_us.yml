@@ -271,6 +271,7 @@ menu:
     back: "Back"
     close: "Close"
   results:
+    more: "<dark_gray><total> results; showing the first 14. Use </dark_gray><white>/music search</white><dark_gray> for more.</dark_gray>"
     title: "Results · <source>"
     song-title: "Song actions"
     song-hint: "<dark_gray>Play it, or save it to My Likes.</dark_gray>"
