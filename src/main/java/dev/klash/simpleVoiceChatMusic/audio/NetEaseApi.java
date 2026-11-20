@@ -623,8 +623,12 @@ public final class NetEaseApi {
     // ----------------------------------------------------------------- search
 
     public static List<Song> search(String keyword, int limit) throws IOException {
+        return search(keyword, limit, 0);
+    }
+
+    public static List<Song> search(String keyword, int limit, int offset) throws IOException {
         String json = "{\"s\":\"" + escapeJson(keyword) + "\",\"type\":1,\"limit\":" + Math.max(1, limit)
-                + ",\"offset\":0,\"csrf_token\":\"\"}";
+                + ",\"offset\":" + Math.max(0, offset) + ",\"csrf_token\":\"\"}";
 
         String body = weapiPost("https://music.163.com/weapi/search/get?csrf_token=", json);
         return parseSearch(body);

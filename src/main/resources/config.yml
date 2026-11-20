@@ -38,11 +38,11 @@ messages:
 # ─────────────────────────────────────────────────────────────────────────────
 music:
   # 每个语音组最多排队多少首歌；队列满后 /music play 会被拒绝，避免被刷爆内存。
-  max-queue-size: 100
+  max-queue-size: 1000
 
   # 所有音源（B 站 / 网易云 / YouTube / SoundCloud）一次搜索展示多少条结果
   # 聊天栏和游戏内菜单共用这个值（1-50）。
-  max-search-results: 5
+  max-search-results: 10
 
   # 聊天里歌名 / 歌手名的最大长度（超出截断加省略号）。
   max-title-length: 120

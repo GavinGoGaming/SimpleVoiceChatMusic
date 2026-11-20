@@ -33,7 +33,18 @@ public class SearchCommand implements Command {
 
     @Override
     public int execute(Player context, String[] args) {
-        final String raw = LinkResolver.normalize(String.join(" ", args)).trim();
+        String raw = LinkResolver.normalize(String.join(" ", args)).trim();
+        int page = 1;
+
+        int pageFlag = raw.lastIndexOf(" --page ");
+        if (pageFlag > 0) {
+            try {
+                page = Math.max(1, Integer.parseInt(raw.substring(pageFlag + 8).trim()));
+            } catch (NumberFormatException ignored) {
+                page = 1;
+            }
+            raw = raw.substring(0, pageFlag).trim();
+        }
 
         if (raw.isEmpty()) {
             Messages.send(context, "search.usage");
@@ -68,7 +79,7 @@ public class SearchCommand implements Command {
                 return 1;
             }
 
-            return searchNetEase(context, keyword);
+            return searchNetEase(context, keyword, page);
         }
 
         // 普通关键词：按玩家自己设置的默认音源搜索
@@ -77,14 +88,14 @@ public class SearchCommand implements Command {
         if (!prefixed && LinkResolver.typeOf(raw) == LinkResolver.Type.SEARCH) {
             switch (PlayerPreferences.sourceFor(context)) {
                 case ALL -> {
-                    return searchAll(context, raw);
+                    return searchAll(context, raw, page);
                 }
                 case NETEASE -> {
-                    return searchNetEase(context, raw);
+                    return searchNetEase(context, raw, page);
                 }
                 case BILIBILI -> {
                     if (PluginSettings.get().bilibili().enabled()) {
-                        return searchBilibili(context, raw);
+                        return searchBilibili(context, raw, page);
                     }
                 }
                 case YOUTUBE -> query = "ytsearch:" + raw;
@@ -112,7 +123,7 @@ public class SearchCommand implements Command {
     /**
      * 「全部音源」：并发搜索所有音源，按音源分组展示。
      */
-    private int searchAll(Player context, String keyword) {
+    private int searchAll(Player context, String keyword, int page) {
         SimpleVoiceChatMusic plugin = SimpleVoiceChatMusic.getOrNull();
         if (plugin == null || !plugin.isEnabled()) {
             return 1;
@@ -198,13 +209,13 @@ public class SearchCommand implements Command {
     /**
      * 用 B 站搜索并展示结果（点击条目执行 /music play bilibili://BVxxx）。
      */
-    private int searchBilibili(Player context, String keyword) {
+    private int searchBilibili(Player context, String keyword, int page) {
         Messages.send(context, "search.loading");
 
         Bukkit.getScheduler().runTaskAsynchronously(SimpleVoiceChatMusic.get(), () -> {
             try {
                 List<BilibiliApi.Video> videos =
-                        BilibiliApi.searchWithRetry(keyword, PluginSettings.get().maxSearchResults());
+                        BilibiliApi.searchWithRetry(keyword, PluginSettings.get().maxSearchResults(), page);
 
                 Bukkit.getScheduler().runTask(SimpleVoiceChatMusic.get(), () -> {
                     if (!context.isOnline()) {
@@ -217,6 +228,10 @@ public class SearchCommand implements Command {
                     }
 
                     context.sendMessage(renderResults(context, videos));
+
+                    if (videos.size() >= PluginSettings.get().maxSearchResults()) {
+                        context.sendMessage(nextPage(context, keyword, page));
+                    }
                 });
             } catch (Exception e) {
                 SimpleVoiceChatMusic.LOGGER.warning("Bilibili search failed: " + e.getMessage());
@@ -235,12 +250,12 @@ public class SearchCommand implements Command {
     /**
      * 网易云搜索并展示结果（点击条目执行 /music play netease://id）。
      */
-    private int searchNetEase(Player context, String keyword) {
+    private int searchNetEase(Player context, String keyword, int page) {
         Messages.send(context, "search.loading");
 
         Bukkit.getScheduler().runTaskAsynchronously(SimpleVoiceChatMusic.get(), () -> {
             try {
-                List<NetEaseApi.Song> songs = NetEaseApi.search(keyword, PluginSettings.get().maxSearchResults());
+                List<NetEaseApi.Song> songs = NetEaseApi.search(keyword, PluginSettings.get().maxSearchResults(), (page - 1) * PluginSettings.get().maxSearchResults());
 
                 Bukkit.getScheduler().runTask(SimpleVoiceChatMusic.get(), () -> {
                     if (!context.isOnline()) {
@@ -253,6 +268,10 @@ public class SearchCommand implements Command {
                     }
 
                     context.sendMessage(renderNetEaseResults(context, songs));
+
+                    if (songs.size() >= PluginSettings.get().maxSearchResults()) {
+                        context.sendMessage(nextPage(context, keyword, page));
+                    }
                 });
             } catch (Exception e) {
                 SimpleVoiceChatMusic.LOGGER.warning("NetEase search failed: " + e.getMessage());
@@ -275,6 +294,12 @@ public class SearchCommand implements Command {
         return label
                 .clickEvent(ClickEvent.runCommand("/music collect " + identifier + " " + title))
                 .hoverEvent(HoverEvent.showText(Messages.component(viewer, "search.collect-hover")));
+    }
+
+    private Component nextPage(Player viewer, String keyword, int page) {
+        return Messages.component(viewer, "search.next-page", Ph.num("page", page + 1))
+                .clickEvent(ClickEvent.runCommand("/music search " + keyword + " --page " + (page + 1)))
+                .hoverEvent(HoverEvent.showText(Messages.component(viewer, "search.next-page-hover")));
     }
 
     private Component renderNetEaseResults(Player viewer, List<NetEaseApi.Song> songs) {

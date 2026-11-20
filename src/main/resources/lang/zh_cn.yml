@@ -64,6 +64,8 @@ search:
   bullet: "  <dark_gray>-</dark_gray> "
   click-to-queue: "<green><bold>[点击加入队列]</bold></green>"
   click-hover: "<gray>把这首歌加入队列</gray>"
+  next-page: "<gray>—— 第 <page> 页 ——</gray> <green>[下一页]</green>"
+  next-page-hover: "<gray>查看下一页搜索结果</gray>"
   collect: "<green>[收藏歌曲]</green>"
   collect-hover: "<gray>收藏到「我的喜欢」</gray>"
   all-loading: "<gray>正在并发搜索全部音源…</gray>"

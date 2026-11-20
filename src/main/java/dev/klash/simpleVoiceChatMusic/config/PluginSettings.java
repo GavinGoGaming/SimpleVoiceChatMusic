@@ -64,6 +64,7 @@ public final class PluginSettings {
     private final boolean menuEnabled;
     private final int menuQueuePageSize;
     private final int menuPreviewCount;
+    private final int menuSearchResults;
 
     private final boolean netEaseEnabled;
     private final String netEaseQuality;
@@ -98,7 +99,7 @@ public final class PluginSettings {
                            String searchClickColor, boolean searchClickBold,
                            boolean autoGroupEnabled, String autoGroupName, String autoGroupPassword,
                            boolean autoGroupPersistent,
-                           int configVersion, boolean menuEnabled, int menuQueuePageSize, int menuPreviewCount,
+                           int configVersion, boolean menuEnabled, int menuQueuePageSize, int menuPreviewCount, int menuSearchResults,
                            boolean netEaseEnabled, String netEaseQuality,
                            String defaultSource,
                            boolean allSourcesYoutube, boolean allSourcesSoundcloud,
@@ -137,6 +138,7 @@ public final class PluginSettings {
         this.menuEnabled = menuEnabled;
         this.menuQueuePageSize = menuQueuePageSize;
         this.menuPreviewCount = menuPreviewCount;
+        this.menuSearchResults = menuSearchResults;
         this.netEaseEnabled = netEaseEnabled;
         this.netEaseQuality = netEaseQuality;
         this.defaultSource = defaultSource;
@@ -153,8 +155,8 @@ public final class PluginSettings {
     }
 
     public static PluginSettings load(FileConfiguration config) {
-        int maxQueueSize = clamp(config.getInt("music.max-queue-size", 100), 1, 1000);
-        int maxSearchResults = clamp(config.getInt("music.max-search-results", 5), 1, 50);
+        int maxQueueSize = clamp(config.getInt("music.max-queue-size", 1000), 1, 5000);
+        int maxSearchResults = clamp(config.getInt("music.max-search-results", 10), 1, 50);
         int maxTitleLength = clamp(config.getInt("music.max-title-length", 120), 8, 512);
         int maxAuthorLength = clamp(config.getInt("music.max-author-length", 60), 4, 256);
         int defaultVolume = clamp(config.getInt("music.default-volume", 100), 0, 100);
@@ -218,6 +220,7 @@ public final class PluginSettings {
         boolean menuEnabled = config.getBoolean("menu.enabled", true);
         int menuQueuePageSize = clamp(config.getInt("menu.queue-page-size", 20), 5, 50);
         int menuPreviewCount = clamp(config.getInt("menu.preview-count", 3), 1, 10);
+        int menuSearchResults = clamp(config.getInt("menu.search-results", 100), 1, 200);
 
         boolean netEaseEnabled = config.getBoolean("netease.enabled", true);
         String netEaseQuality = config.getString("netease.quality", "exhigh");
@@ -261,7 +264,7 @@ public final class PluginSettings {
                 preflightEnabled, preflightTimeout, failureCache, retryCount, retryDelay,
                 searchClickColor.trim(), searchClickBold,
                 autoGroupEnabled, autoGroupName.trim(), autoGroupPassword, autoGroupPersistent,
-                configVersion, menuEnabled, menuQueuePageSize, menuPreviewCount,
+                configVersion, menuEnabled, menuQueuePageSize, menuPreviewCount, menuSearchResults,
                 netEaseEnabled, netEaseQuality, defaultSource.trim(),
                 allSourcesYoutube, allSourcesSoundcloud,
                 lyricsEnabled, lyricsUpdateIntervalTicks, lyricsOffsetMs, lyricsColor.trim(),
@@ -412,6 +415,11 @@ public final class PluginSettings {
         return menuPreviewCount;
     }
 
+    /** 菜单搜索结果默认展示数量 */
+    public int menuSearchResults() {
+        return menuSearchResults;
+    }
+
     /** 是否启用网易云音源 */
     public boolean netEaseEnabled() {
         return netEaseEnabled;
@@ -486,7 +494,7 @@ public final class PluginSettings {
             true, 20, "PINK", "PROGRESS",
             DEFAULT_USER_AGENT, "", 5000, 15000, true, 4000, 30, 2, 1500, "green", true,
             true, "音乐", "", true,
-            1, true, 20, 3,
+            1, true, 20, 3, 100,
             true, "exhigh", "bilibili", true, true,
             true, 10, 0, "blue", true, "",
             1000,

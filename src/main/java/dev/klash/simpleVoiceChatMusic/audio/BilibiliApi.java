@@ -108,10 +108,15 @@ public final class BilibiliApi {
     // ------------------------------------------------------------------ network
 
     public static List<Video> search(String keyword, int limit) throws IOException {
+        return search(keyword, limit, 1);
+    }
+
+    public static List<Video> search(String keyword, int limit, int page) throws IOException {
         PluginSettings settings = PluginSettings.get();
         String url = settings.bilibili().searchUrl()
                 .replace("{query}", URLEncoder.encode(keyword, StandardCharsets.UTF_8))
-                .replace("{limit}", Integer.toString(Math.max(1, limit)));
+                .replace("{limit}", Integer.toString(Math.max(1, limit)))
+                .replace("&page=1", "&page=" + Math.max(1, page));
 
         return parseSearch(executeApi(url, settings));
     }
@@ -556,11 +561,15 @@ public final class BilibiliApi {
      * 搜索失败或为空时重试一次（首次请求可能因缺少 buvid3 被 B 站风控拦下）。
      */
     public static List<Video> searchWithRetry(String keyword, int limit) throws IOException {
+        return searchWithRetry(keyword, limit, 1);
+    }
+
+    public static List<Video> searchWithRetry(String keyword, int limit, int page) throws IOException {
         IOException failure = null;
 
         for (int attempt = 0; attempt < 2; attempt++) {
             try {
-                List<Video> videos = search(keyword, limit);
+                List<Video> videos = search(keyword, limit, page);
 
                 if (!videos.isEmpty()) {
                     return videos;

@@ -132,7 +132,7 @@ public final class MusicDialogGui {
 
         // 与聊天栏搜索保持一致：条数完全由配置决定
         PluginSettings settings = PluginSettings.get();
-        final int limit = Math.max(1, settings.maxSearchResults());
+        final int limit = Math.max(1, settings.menuSearchResults());
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             List<ResultEntry> entries = new ArrayList<>();
